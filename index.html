@@ -11,6 +11,9 @@
 </head>
 <body>
 
+<!-- ═══════════════ STARFIELD BACKGROUND ═══════════════ -->
+<canvas id="starfield-bg" aria-hidden="true"></canvas>
+
 <!-- ═══════════════ AUTH SCREEN ═══════════════ -->
 <div id="auth-screen" class="auth-screen">
   <div class="auth-bg">
@@ -99,6 +102,14 @@
           <button class="status-tab" data-status="completed"><span class="tab-lbl" data-i18n="completed">Terminé</span> <span class="tab-count" id="count-completed">0</span></button>
         </div>
       </div>
+      <div class="sort-bar">
+        <span class="sort-lbl" data-i18n="sort_by">Trier</span>
+        <button class="sort-opt active" data-sort="recent" onclick="setListSort('recent')" data-i18n="sort_recent">Récent</button>
+        <button class="sort-opt" data-sort="alpha" onclick="setListSort('alpha')" data-i18n="sort_alpha">A → Z</button>
+        <button class="sort-opt" data-sort="alpha_rev" onclick="setListSort('alpha_rev')" data-i18n="sort_alpha_rev">Z → A</button>
+        <button class="sort-opt" data-sort="score_desc" onclick="setListSort('score_desc')" data-i18n="sort_score_desc">Note ↓</button>
+        <button class="sort-opt" data-sort="score_asc" onclick="setListSort('score_asc')" data-i18n="sort_score_asc">Note ↑</button>
+      </div>
       <div class="type-section" id="section-series">
         <div class="type-header"><span>📺</span><span class="type-label" data-type="series">Séries</span></div>
         <div id="grid-series" class="anime-grid"></div>
@@ -120,6 +131,11 @@
         <input type="text" id="search-input" class="search-input" placeholder="Naruto, Attack on Titan, Your Name…" data-i18n="search_ph"/>
         <button class="btn-search" onclick="searchAnime()" data-i18n="search_btn">Rechercher</button>
       </div>
+      <label class="search-filter-row">
+        <input type="checkbox" id="search-hide-added" onchange="toggleSearchHideAdded()"/>
+        <span class="check-box"></span>
+        <span data-i18n="hide_added">Masquer ceux déjà ajoutés</span>
+      </label>
       <div class="genre-filters" id="genre-filters">
         <button class="genre-btn active" data-genre="" data-i18n="genres_all">Tous</button>
         <button class="genre-btn" data-genre="1">Action</button>

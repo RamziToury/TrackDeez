@@ -16,6 +16,16 @@ let discoverPool  = [];
 let discoverIndex = 0;
 let discoverPage  = 1;
 let _recoCache    = {};
+let listSortMode  = 'recent';
+let searchHideAdded = false;
+let _modalTab     = 'details';
+let _charCache    = {};
+
+const CHAR_AXES = [
+  { key:'charadesign', emojiFr:'✏️', labelFr:'Character Design',  labelEn:'Character Design' },
+  { key:'backstory',   emojiFr:'📖', labelFr:'Histoire perso',     labelEn:'Backstory' },
+  { key:'dev',         emojiFr:'🌱', labelFr:'Développement',      labelEn:'Development' },
+];
 
 // Genre name → Jikan ID map (for recommendations)
 const GENRE_MAP = {
@@ -96,6 +106,16 @@ const LANG = {
     avg_score:'Note moyenne', top_genres:'Genres préférés',
     nothing_yet:'Aucun animé pour l\'instant',
     based_on:'Basées sur tes genres préférés',
+    // Sort & filters
+    sort_by:'Trier', sort_recent:'Récent', sort_alpha:'A → Z',
+    sort_alpha_rev:'Z → A', sort_score_desc:'Note ↓', sort_score_asc:'Note ↑',
+    hide_added:'Masquer ceux déjà ajoutés',
+    // Modal tabs
+    tab_details:'📋 Détails', tab_characters:'👥 Personnages',
+    no_chars:'Pas de personnages disponibles.', loading_chars:'Chargement…',
+    char_global:'Global perso',
+    translating:'Traduction…', translated_auto:'Traduit auto',
+    show_original:'Voir l\'original', show_translation:'Voir la traduction',
   },
   en: {
     // Auth
@@ -159,6 +179,16 @@ const LANG = {
     avg_score:'Average score', top_genres:'Top genres',
     nothing_yet:'No anime yet',
     based_on:'Based on your top genres',
+    // Sort & filters
+    sort_by:'Sort', sort_recent:'Recent', sort_alpha:'A → Z',
+    sort_alpha_rev:'Z → A', sort_score_desc:'Score ↓', sort_score_asc:'Score ↑',
+    hide_added:'Hide already added',
+    // Modal tabs
+    tab_details:'📋 Details', tab_characters:'👥 Characters',
+    no_chars:'No characters available.', loading_chars:'Loading…',
+    char_global:'Personal global',
+    translating:'Translating…', translated_auto:'Auto-translated',
+    show_original:'Show original', show_translation:'Show translation',
   }
 };
 
@@ -243,6 +273,33 @@ function saveTop10(t) {
   db.users[currentUser].top10=t; saveDB(db);
 }
 
+// ── SKIP TRACKING ─────────────────────────────────
+const SKIP_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function getSkipped() {
+  const data = getUserData(currentUser);
+  const sk = data.skipped || {};
+  const cutoff = Date.now() - SKIP_TTL_MS;
+  let dirty = false;
+  for (const id in sk) {
+    if (sk[id] < cutoff) { delete sk[id]; dirty = true; }
+  }
+  if (dirty) { data.skipped = sk; saveUserData(currentUser, data); }
+  return sk;
+}
+
+function addSkipped(malId) {
+  const data = getUserData(currentUser);
+  if (!data.skipped) data.skipped = {};
+  data.skipped[malId] = Date.now();
+  saveUserData(currentUser, data);
+}
+
+function isSkipped(malId) {
+  const sk = getSkipped();
+  return sk[malId] !== undefined;
+}
+
 // ══ AUTH ═════════════════════════════════════════
 function hash(p) {
   let h=0;
@@ -286,7 +343,7 @@ function loginUser(u) {
   currentLang = getUserData(u).lang || 'fr';
   applyLang();
   discoverPool=[]; discoverIndex=0; discoverPage=1;
-  _searchCache={}; currentFilter='all'; currentGenre='';
+  _searchCache={}; _recoCache={}; currentFilter='all'; currentGenre='';
   currentSearchPage=1; searchTotalPages=1;
   document.querySelectorAll('.status-tab').forEach(t2=>t2.classList.remove('active'));
   document.querySelector('.status-tab[data-status="all"]')?.classList.add('active');
@@ -306,6 +363,70 @@ function handleLogout() {
   $('login-username').value=''; $('login-password').value='';
 }
 function showErr(el,m) { el.textContent=m; el.classList.remove('hidden'); }
+
+// ══ SYNOPSIS TRANSLATION ═══════════════════════════
+function getTransCache() {
+  return JSON.parse(localStorage.getItem('anitrack_translations') || '{}');
+}
+function saveTransCache(c) {
+  try { localStorage.setItem('anitrack_translations', JSON.stringify(c)); } catch {}
+}
+
+async function translateText(text, targetLang) {
+  if (!text) return '';
+  if (targetLang === 'en') return text;
+  // MyMemory has a 500-char per-request limit for free tier — chunk by sentence
+  const chunks = [];
+  let buf = '';
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if ((buf + ' ' + sentence).length > 480) {
+      if (buf) chunks.push(buf.trim());
+      buf = sentence;
+    } else {
+      buf = buf ? buf + ' ' + sentence : sentence;
+    }
+  }
+  if (buf) chunks.push(buf.trim());
+  const out = [];
+  for (const c of chunks) {
+    try {
+      const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(c)}&langpair=en|${targetLang}`);
+      const d = await r.json();
+      out.push(d.responseData?.translatedText || c);
+    } catch { out.push(c); }
+  }
+  return out.join(' ');
+}
+
+async function getTranslatedSynopsis(malId, originalEn, targetLang) {
+  if (!originalEn || targetLang === 'en') return originalEn || '';
+  const cache = getTransCache();
+  const key = `${malId}_${targetLang}`;
+  if (cache[key]) return cache[key];
+  const translated = await translateText(originalEn, targetLang);
+  cache[key] = translated;
+  saveTransCache(cache);
+  return translated;
+}
+
+async function applySynopsisTranslation(elId, malId, originalText) {
+  const el = document.getElementById(elId);
+  if (!el || !originalText) return;
+  if (currentLang === 'en') { el.textContent = originalText; return; }
+  // Show loading state with original text faded
+  el.dataset.malid = String(malId);
+  el.innerHTML = `<span style="opacity:.55">${esc(originalText)}</span>`;
+  const lockId = String(malId);
+  try {
+    const translated = await getTranslatedSynopsis(malId, originalText, 'fr');
+    // Make sure we still want to show this (modal/card not changed)
+    if (el.dataset.malid === lockId) {
+      el.textContent = translated;
+    }
+  } catch {
+    if (el.dataset.malid === lockId) el.textContent = originalText;
+  }
+}
 
 // ══ THEME ═════════════════════════════════════════
 function toggleTheme() {
@@ -376,10 +497,28 @@ function updateCounts() {
   $('count-completed').textContent=arr.filter(a=>a.status==='completed').length;
 }
 
+// ══ LIST SORT ══════════════════════════════════════
+const LIST_SORTERS = {
+  recent:    (a,b) => (b.addedAt||0) - (a.addedAt||0),
+  alpha:     (a,b) => (a.title||'').localeCompare(b.title||''),
+  alpha_rev: (a,b) => (b.title||'').localeCompare(a.title||''),
+  score_desc:(a,b) => (computeGlobal(b.scores) ?? -1) - (computeGlobal(a.scores) ?? -1),
+  score_asc: (a,b) => (computeGlobal(a.scores) ?? 999) - (computeGlobal(b.scores) ?? 999),
+};
+
+function setListSort(mode) {
+  listSortMode = mode;
+  document.querySelectorAll('.sort-opt').forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
+  renderListView();
+}
+
 // ══ RENDER LIST ════════════════════════════════════
 function renderListView() {
   const all=Object.values(getList());
   let items=currentFilter==='all'?all:all.filter(a=>a.status===currentFilter);
+  // Apply sort
+  const sorter = LIST_SORTERS[listSortMode] || LIST_SORTERS.recent;
+  items = [...items].sort(sorter);
   const series=items.filter(a=>!isMovie(a));
   const movies=items.filter(a=>isMovie(a));
   $('grid-series').innerHTML=series.map(a=>buildCard(a,'list')).join('');
@@ -495,7 +634,12 @@ async function searchAnime(page) {
     const totalItems=data.pagination?.items?.total||0;
 
     _searchCache={};
-    data.data.forEach(a=>{
+    let items = data.data;
+    if (searchHideAdded) {
+      const userList = getList();
+      items = items.filter(a => !userList[a.mal_id]);
+    }
+    items.forEach(a=>{
       _searchCache[a.mal_id]={
         mal_id:a.mal_id,
         title:a.title_english||a.title,
@@ -512,6 +656,9 @@ async function searchAnime(page) {
       };
     });
     $('search-results').innerHTML=Object.values(_searchCache).map(a=>buildCard(a,'search')).join('');
+    if (searchHideAdded && !Object.keys(_searchCache).length) {
+      $('search-empty').classList.remove('hidden');
+    }
     renderSearchPagination(totalItems);
   } catch(err) {
     $('search-loading').classList.add('hidden');
@@ -541,6 +688,14 @@ function renderSearchPagination(totalItems) {
     ${pages}
     <button class="pg-btn pg-arrow" ${p>=last?'disabled':''} onclick="searchAnime(${p+1})">›</button>
   </div></div>`;
+}
+
+function toggleSearchHideAdded() {
+  searchHideAdded = !searchHideAdded;
+  const cb = $('search-hide-added');
+  if (cb) cb.checked = searchHideAdded;
+  currentSearchPage = 1;
+  searchAnime();
 }
 
 function quickAdd(malId) {
@@ -608,37 +763,51 @@ function renderDiscoverStats() {
   `;
 }
 
+function pickRecoFromPool(pool, genreName, el) {
+  const list = getList();
+  const skipped = getSkipped();
+  const available = pool.filter(a => !list[a.mal_id] && !skipped[a.mal_id]);
+  if (!available.length) {
+    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
+    return;
+  }
+  // Shuffle and pick 4 — gives "real-time" variety on every render
+  const shuffled = [...available].sort(() => Math.random() - 0.5).slice(0, 4);
+  // Cache them in _searchCache so openModal can find them
+  shuffled.forEach(a => { _searchCache[a.mal_id] = a; });
+  renderRecoCards(el, shuffled, genreName);
+}
+
 async function renderDiscoverRecos() {
   const el = $('discover-recos'); if (!el) return;
   const top = getUserTopGenres(3);
-  if (!top.length) {
-    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
-    return;
+  if (!top.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
+  // Pick weighted-random genre from top 3 (rotates so user sees variety)
+  const validGenres = top.filter(([g]) => GENRE_MAP[g]);
+  if (!validGenres.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
+  const totalWeight = validGenres.reduce((s,[,c])=>s+c, 0);
+  let pick = Math.random() * totalWeight, chosen = validGenres[0];
+  for (const entry of validGenres) {
+    pick -= entry[1];
+    if (pick <= 0) { chosen = entry; break; }
   }
-  // Find first genre that maps to a Jikan ID
-  const genreEntry = top.find(([g])=>GENRE_MAP[g]);
-  if (!genreEntry) {
-    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
-    return;
-  }
-  const [genreName, ] = genreEntry;
+  const [genreName] = chosen;
   const genreId = GENRE_MAP[genreName];
   const userAvg = getUserAvgScore();
-  // Use user's avg score (on /20 → /10) as min, capped between 6.5 and 8.5
   const minScore = userAvg !== null
     ? Math.min(8.5, Math.max(6.5, (userAvg/2) - 0.3))
     : 7;
   const cacheKey = `${genreId}_${minScore.toFixed(1)}`;
-  if (_recoCache[cacheKey]) { renderRecoCards(el, _recoCache[cacheKey], genreName); return; }
+
+  if (_recoCache[cacheKey]) { pickRecoFromPool(_recoCache[cacheKey], genreName, el); return; }
+
   el.innerHTML = `<div class="ds-loading"><div class="spinner-sm"></div></div>`;
   try {
     await rl();
-    const r = await fetch(`${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=10`);
+    const r = await fetch(`${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=25`);
     const data = await r.json();
-    const list = getList();
-    const filtered = (data.data||[])
-      .filter(a => !list[a.mal_id] && a.images?.jpg?.image_url)
-      .slice(0, 4)
+    const pool = (data.data||[])
+      .filter(a => a.images?.jpg?.image_url)
       .map(a => ({
         mal_id: a.mal_id,
         title: a.title_english||a.title,
@@ -653,10 +822,8 @@ async function renderDiscoverRecos() {
         trailer_id: a.trailer?.youtube_id||null,
         season: a.season||null,
       }));
-    _recoCache[cacheKey] = filtered;
-    // also cache in search cache so modal can open them
-    filtered.forEach(a => { _searchCache[a.mal_id] = a; });
-    renderRecoCards(el, filtered, genreName);
+    _recoCache[cacheKey] = pool;
+    pickRecoFromPool(pool, genreName, el);
   } catch {
     el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
   }
@@ -692,8 +859,9 @@ async function initDiscover() {
     const data=await res.json();
     discoverPage++;
     const list=getList();
+    const skipped=getSkipped();
     const fresh=(data.data||[]).filter(a=>
-      !list[a.mal_id]&&a.images?.jpg?.image_url&&(a.synopsis?.length>50)
+      !list[a.mal_id]&&!skipped[a.mal_id]&&a.images?.jpg?.image_url&&(a.synopsis?.length>50)
     );
     discoverPool=[...discoverPool,...fresh.map(a=>({
       mal_id:a.mal_id,
@@ -723,14 +891,23 @@ async function initDiscover() {
 
 function showDiscoverCard() {
   const list=getList();
-  while (discoverIndex<discoverPool.length&&list[discoverPool[discoverIndex]?.mal_id]) discoverIndex++;
+  const skipped=getSkipped();
+  while (discoverIndex<discoverPool.length) {
+    const id = discoverPool[discoverIndex]?.mal_id;
+    if (!id || list[id] || skipped[id]) { discoverIndex++; continue; }
+    break;
+  }
   if (discoverIndex>=discoverPool.length) { initDiscover(); return; }
   const a=discoverPool[discoverIndex];
 
   $('dc-img').src=a.image;
   $('dc-img').alt=a.title;
   $('dc-title').textContent=a.title;
-  $('dc-synopsis').textContent=a.synopsis||'';
+  if (a.synopsis) {
+    applySynopsisTranslation('dc-synopsis', a.mal_id, a.synopsis);
+  } else {
+    $('dc-synopsis').textContent = '';
+  }
 
   // Tags (genres + themes combined)
   const allTags=[...a.genres,...(a.themes||[])];
@@ -763,7 +940,9 @@ function showDiscoverCard() {
 function discoverAction(action) {
   const a=discoverPool[discoverIndex];
   if (!a) return;
-  if (action!=='skip') {
+  if (action==='skip') {
+    addSkipped(a.mal_id);
+  } else {
     const list=getList();
     list[a.mal_id]={...a,status:action,currentEp:0,scores:{},favorite:false,addedAt:Date.now()};
     saveList(list); updateCounts();
@@ -779,7 +958,12 @@ function discoverAction(action) {
   card.style.transition='transform .25s,opacity .25s';
   card.style.transform=action==='skip'?'translateX(-60px) rotate(-3deg)':'translateX(60px) rotate(3deg)';
   card.style.opacity='0';
-  setTimeout(()=>{ card.style.transition=''; card.style.transform=''; card.style.opacity=''; showDiscoverCard(); renderDiscoverStats(); },260);
+  setTimeout(()=>{
+    card.style.transition=''; card.style.transform=''; card.style.opacity='';
+    showDiscoverCard();
+    renderDiscoverStats();
+    renderDiscoverRecos();
+  },260);
 }
 
 // ══ MODAL ═════════════════════════════════════════
@@ -814,6 +998,7 @@ async function openModal(malId, source) {
   }
   if (!anime.scores) anime.scores={};
   _modal={...anime,mal_id:malId};
+  _modalTab = 'details';
   renderModal(malId);
   $('modal-overlay').classList.remove('hidden');
 }
@@ -918,11 +1103,148 @@ function renderModal(malId) {
         <div class="modal-meta">${typeTag}${yearTag}${epsTag}${scoreTag}${seasonTag}</div>
         ${tagsHtml}
         ${trailerHtml}
-        <p class="modal-synopsis">${esc(a.synopsis||t('no_synopsis'))}</p>
+        <p class="modal-synopsis" id="modal-synopsis">${esc(a.synopsis||t('no_synopsis'))}</p>
       </div>
     </div>
-    ${addBtn}${statusSec}${epSec}${ratingsSec}${removeBtn}
+    <div class="modal-tabs">
+      <button class="m-tab ${_modalTab==='details'?'active':''}" onclick="switchModalTab('details')">${t('tab_details')}</button>
+      <button class="m-tab ${_modalTab==='characters'?'active':''}" onclick="switchModalTab('characters')">${t('tab_characters')}</button>
+    </div>
+    <div id="mtab-details" class="m-tab-content ${_modalTab==='details'?'active':''}">
+      ${addBtn}${statusSec}${epSec}${ratingsSec}${removeBtn}
+    </div>
+    <div id="mtab-characters" class="m-tab-content ${_modalTab==='characters'?'active':''}">
+      <div class="char-loading"><div class="spinner-sm"></div><span>${t('loading_chars')}</span></div>
+    </div>
   `;
+  // Async translate synopsis if FR
+  if (a.synopsis && currentLang==='fr') applySynopsisTranslation('modal-synopsis', malId, a.synopsis);
+  // Initialize slider fills (WebKit gradient needs JS-driven CSS var)
+  initSliderFills($('modal-content'));
+  // If characters tab open, render
+  if (_modalTab==='characters') renderCharactersTab(malId);
+}
+
+// ══ MODAL TABS ════════════════════════════════════
+function switchModalTab(tab) {
+  _modalTab = tab;
+  document.querySelectorAll('.m-tab').forEach((b,i) => b.classList.toggle('active', i === (tab==='details'?0:1)));
+  $('mtab-details').classList.toggle('active', tab==='details');
+  $('mtab-characters').classList.toggle('active', tab==='characters');
+  if (tab==='characters' && _modal) renderCharactersTab(_modal.mal_id);
+}
+
+// ══ CHARACTERS ════════════════════════════════════
+async function loadCharacters(malId) {
+  if (_charCache[malId]) return _charCache[malId];
+  // Check user list first
+  const list = getList();
+  if (list[malId]?.characters?.length) {
+    _charCache[malId] = list[malId].characters;
+    return _charCache[malId];
+  }
+  try {
+    await rl();
+    const r = await fetch(`${JIKAN}/anime/${malId}/characters`);
+    const d = await r.json();
+    const main = (d.data||[])
+      .filter(c => c.role === 'Main')
+      .slice(0, 8)
+      .map(c => ({
+        id: c.character.mal_id,
+        name: c.character.name,
+        image: c.character.images?.jpg?.image_url || ''
+      }));
+    _charCache[malId] = main;
+    if (list[malId]) {
+      list[malId].characters = main;
+      saveList(list);
+    }
+    return main;
+  } catch { return []; }
+}
+
+async function renderCharactersTab(malId) {
+  const el = $('mtab-characters');
+  if (!el) return;
+  const inList = !!getList()[malId];
+  el.innerHTML = `<div class="char-loading"><div class="spinner-sm"></div><span>${t('loading_chars')}</span></div>`;
+  const chars = await loadCharacters(malId);
+  if (!_modal || _modal.mal_id !== malId) return;
+  if (!chars.length) {
+    el.innerHTML = `<div class="char-empty">${t('no_chars')}</div>`;
+    return;
+  }
+  const userList = getList();
+  const charScores = userList[malId]?.characterScores || {};
+  // Build then init slider fills after innerHTML set
+  el.innerHTML = `<div class="characters-grid">
+    ${chars.map(c => {
+      const s = charScores[c.id] || {};
+      const vals = CHAR_AXES.map(ax => s[ax.key]).filter(v => v!==undefined && v!==null);
+      const charGlobal = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10 : null;
+      return `<div class="char-card" id="char-card-${c.id}">
+        <div class="char-card-top">
+          <img class="char-img" src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy"/>
+          <div class="char-head">
+            <div class="char-name">${esc(c.name)}</div>
+            <div class="char-global-wrap" id="char-global-wrap-${c.id}">
+              ${charGlobal!==null?`<div class="char-global" id="char-global-${c.id}">★ ${charGlobal}/20</div>`:''}
+            </div>
+          </div>
+        </div>
+        ${inList ? `<div class="char-axes">${CHAR_AXES.map(ax => buildCharAxis(c.id, ax, s[ax.key])).join('')}</div>` : `<div class="char-locked">${t('add_to_list')}</div>`}
+      </div>`;
+    }).join('')}
+  </div>`;
+  initSliderFills(el);
+}
+
+function buildCharAxis(charId, axis, val) {
+  const label = currentLang==='en' ? axis.labelEn : axis.labelFr;
+  const v = val !== undefined && val !== null ? val : 0;
+  const valDisplay = val !== undefined && val !== null ? `${v}/20` : '—/20';
+  return `<div class="char-axis">
+    <span class="char-axis-lbl"><span class="char-axis-emoji">${axis.emojiFr}</span>${label}</span>
+    <input type="range" class="rating-slider char-slider" min="0" max="20" step="0.5" value="${v}"
+           oninput="updateSliderFill(this); onCharSlide(${charId},'${axis.key}',this.value)"
+           onchange="setCharScore(${charId},'${axis.key}',this.value)"/>
+    <span class="char-axis-val" id="cval-${charId}-${axis.key}">${valDisplay}</span>
+  </div>`;
+}
+
+function onCharSlide(charId, axisKey, val) {
+  const v = parseFloat(val) || 0;
+  const valEl = $(`cval-${charId}-${axisKey}`);
+  if (valEl) valEl.textContent = v + '/20';
+}
+
+function setCharScore(charId, axisKey, val) {
+  const malId = _modal?.mal_id;
+  if (!malId) return;
+  const list = getList();
+  if (!list[malId]) return;
+  if (!list[malId].characterScores) list[malId].characterScores = {};
+  if (!list[malId].characterScores[charId]) list[malId].characterScores[charId] = {};
+  let score = Math.max(0, Math.min(20, parseFloat(val)||0));
+  score = Math.round(score*2)/2;
+  list[malId].characterScores[charId][axisKey] = score;
+  saveList(list);
+  const valEl = $(`cval-${charId}-${axisKey}`);
+  if (valEl) valEl.textContent = score+'/20';
+  // recompute char global
+  const s = list[malId].characterScores[charId];
+  const vals = CHAR_AXES.map(ax => s[ax.key]).filter(v => v!==undefined && v!==null);
+  const charGlobal = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10 : null;
+  const wrap = $(`char-global-wrap-${charId}`);
+  if (wrap && charGlobal !== null) {
+    let pill = $(`char-global-${charId}`);
+    if (!pill) {
+      wrap.innerHTML = `<div class="char-global" id="char-global-${charId}">★ ${charGlobal}/20</div>`;
+    } else {
+      pill.textContent = `★ ${charGlobal}/20`;
+    }
+  }
 }
 
 function toggleTagsExpand(tags) {
@@ -942,15 +1264,43 @@ function toggleTagsExpand(tags) {
 }
 
 function buildRatingItem(key, emoji, label, val) {
-  const filled=val?Math.round(val/2):0;
-  const stars=Array.from({length:10},(_,i)=>
-    `<button class="star-btn ${i<filled?'filled':''}" onclick="setScore('${key}',${(i+1)*2})" title="${(i+1)*2}/20">★</button>`
-  ).join('');
+  const v = val !== undefined && val !== null ? val : 0;
   return `<div class="rating-item">
     <div class="rating-item-label"><span class="ri-emoji">${emoji}</span>${label}</div>
-    <div class="rating-stars" id="stars-${key}">${stars}</div>
-    <div class="rating-val" id="rval-${key}">${val?`<strong>${val}</strong>/20`:`<span style="color:var(--text2)">—</span>`}</div>
+    <div class="rating-slider-row">
+      <input type="range" class="rating-slider" min="0" max="20" step="0.5" value="${v}"
+             oninput="updateSliderFill(this); onRatingSlide('${key}', this.value)"
+             onchange="setScore('${key}', this.value)"/>
+      <span class="rating-val" id="rval-${key}">${val!==undefined&&val!==null?`<strong>${v}</strong>/20`:`<span style="color:var(--text2)">—/20</span>`}</span>
+    </div>
   </div>`;
+}
+
+// Set slider fill percentage via CSS variable (WebKit doesn't support ::-webkit-slider-progress)
+function updateSliderFill(input) {
+  if (!input) return;
+  const min = parseFloat(input.min) || 0;
+  const max = parseFloat(input.max) || 100;
+  const val = parseFloat(input.value) || 0;
+  const pct = max === min ? 0 : ((val - min) / (max - min)) * 100;
+  input.style.setProperty('--rng-pct', pct + '%');
+}
+
+function initSliderFills(scope) {
+  (scope || document).querySelectorAll('input[type=range].rating-slider').forEach(updateSliderFill);
+}
+
+// Live update during drag (no save)
+function onRatingSlide(key, val) {
+  const v = parseFloat(val) || 0;
+  const rvalEl = $(`rval-${key}`);
+  if (rvalEl) rvalEl.innerHTML = `<strong>${v}</strong>/20`;
+  // Live global preview
+  if (!_modal) return;
+  const previewScores = { ..._modal.scores, [key]: v };
+  const g = computeGlobal(previewScores);
+  const el = $('global-score-val');
+  if (el && g !== null) el.textContent = g + '/20';
 }
 
 // ══ MODAL ACTIONS ══════════════════════════════════
@@ -998,14 +1348,13 @@ function setEp(v) {
 function setScore(key, val) {
   const list=getList(), id=_modal.mal_id; if (!list[id]) return;
   if (!list[id].scores) list[id].scores={};
-  const score=Math.max(0,Math.min(20,parseFloat(val)||0));
-  list[id].scores[key]=score; if (!_modal.scores) _modal.scores={};
-  _modal.scores[key]=score; saveList(list);
-  const filled=Math.round(score/2);
-  const starsEl=$(`stars-${key}`);
-  if (starsEl) starsEl.innerHTML=Array.from({length:10},(_,i)=>
-    `<button class="star-btn ${i<filled?'filled':''}" onclick="setScore('${key}',${(i+1)*2})" title="${(i+1)*2}/20">★</button>`
-  ).join('');
+  // Round to nearest 0.5 for clean display
+  let score=Math.max(0,Math.min(20,parseFloat(val)||0));
+  score = Math.round(score*2)/2;
+  list[id].scores[key]=score;
+  if (!_modal.scores) _modal.scores={};
+  _modal.scores[key]=score;
+  saveList(list);
   const rvalEl=$(`rval-${key}`);
   if (rvalEl) rvalEl.innerHTML=`<strong>${score}</strong>/20`;
   const global=computeGlobal(_modal.scores);
@@ -1015,7 +1364,7 @@ function setScore(key, val) {
       const rg=document.querySelector('.ratings-grid');
       if (rg) {
         const div=document.createElement('div');
-        div.style.cssText='margin-top:12px;padding:10px 14px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;gap:10px';
+        div.className='global-score-display';
         div.innerHTML=`<span style="font-size:16px">⭐</span><span style="font-size:13px;color:var(--text2)">${t('global_avg')}</span><strong id="global-score-val" style="margin-left:auto;color:var(--star);font-size:18px">${global}/20</strong>`;
         rg.after(div);
       }
@@ -1245,6 +1594,108 @@ function showToast(msg) {
   clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.add('hidden'),2800);
 }
 
+// ══ STARFIELD BACKGROUND ═══════════════════════════
+// Vanilla port of https://21st.dev Starfield component (canvas + RAF, no React)
+const Starfield = {
+  canvas: null, ctx: null,
+  w: 0, h: 0, cx: 0, cy: 0, cz: 0,
+  colorRatio: 0, ratio: 0,
+  stars: [], raf: 0, running: false,
+  opts: {
+    speed: 0.25,
+    quantity: 220,
+    starColor: 'rgba(255,255,255,0.75)',
+    bgColor: 'rgba(13,13,20,1)',
+  },
+
+  init() {
+    this.canvas = document.getElementById('starfield-bg');
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    this.ratio = this.opts.quantity / 2;
+    this.measure();
+    this.bigBang();
+    this.start();
+    window.addEventListener('resize', () => this.onResize());
+  },
+
+  measure() {
+    this.w = window.innerWidth;
+    this.h = window.innerHeight;
+    this.cx = this.w / 2;
+    this.cy = this.h / 2;
+    this.cz = (this.w + this.h) / 2;
+    this.colorRatio = 1 / this.cz;
+    this.canvas.width = this.w;
+    this.canvas.height = this.h;
+  },
+
+  bigBang() {
+    this.stars = new Array(this.opts.quantity).fill(0).map(() => [
+      Math.random() * this.w * 2 - this.cx * 2,
+      Math.random() * this.h * 2 - this.cy * 2,
+      Math.round(Math.random() * this.cz),
+      0, 0, 0, 0, true,
+    ]);
+  },
+
+  onResize() {
+    this.measure();
+    this.bigBang();
+  },
+
+  update() {
+    for (let i = 0; i < this.stars.length; i++) {
+      const s = this.stars[i];
+      s[7] = true;
+      s[5] = s[3];
+      s[6] = s[4];
+      s[2] -= this.opts.speed;
+      if (s[2] > this.cz) { s[2] -= this.cz; s[7] = false; }
+      if (s[2] < 0)        { s[2] += this.cz; s[7] = false; }
+      s[3] = this.cx + (s[0] / s[2]) * this.ratio;
+      s[4] = this.cy + (s[1] / s[2]) * this.ratio;
+    }
+  },
+
+  draw() {
+    const ctx = this.ctx;
+    // Pull the starfield bgColor from the current theme
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    ctx.fillStyle = isLight ? 'rgba(242,242,250,1)' : this.opts.bgColor;
+    ctx.fillRect(0, 0, this.w, this.h);
+    ctx.strokeStyle = isLight ? 'rgba(60,40,180,0.55)' : this.opts.starColor;
+    for (let i = 0; i < this.stars.length; i++) {
+      const s = this.stars[i];
+      if (s[5] > 0 && s[5] < this.w && s[6] > 0 && s[6] < this.h && s[7]) {
+        ctx.lineWidth = (1 - this.colorRatio * s[2]) * 2;
+        ctx.beginPath();
+        ctx.moveTo(s[5], s[6]);
+        ctx.lineTo(s[3], s[4]);
+        ctx.stroke();
+      }
+    }
+  },
+
+  loop() {
+    if (!this.running) return;
+    this.update();
+    this.draw();
+    this.raf = requestAnimationFrame(() => this.loop());
+  },
+
+  start() {
+    if (this.running) return;
+    this.running = true;
+    this.loop();
+  },
+
+  stop() {
+    this.running = false;
+    cancelAnimationFrame(this.raf);
+  },
+};
+
 // ══ BOOT ══════════════════════════════════════════
 (function boot() {
   initAuthTabs();
@@ -1260,6 +1711,7 @@ function showToast(msg) {
   ['reg-username','reg-password','reg-password2'].forEach(id=>$(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')handleRegister();}));
 
   applyLang();
+  Starfield.init();
 
   const db=getDB(), saved=db.sessions?.current;
   if (saved&&db.users?.[saved]) loginUser(saved);
