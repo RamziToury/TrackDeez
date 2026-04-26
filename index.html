@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AniTrack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════ STARFIELD BACKGROUND ═══════════════ -->
+<canvas id="starfield-bg" aria-hidden="true"></canvas>
+
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-bg">
+    <div class="auth-orb orb1"></div>
+    <div class="auth-orb orb2"></div>
+    <div class="auth-orb orb3"></div>
+  </div>
+  <div class="auth-card">
+    <div class="auth-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <p class="auth-tagline" data-i18n="tagline">Suivez vos animés. Célébrez chaque épisode.</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login" data-i18n="login">Connexion</button>
+      <button class="auth-tab" data-tab="register" data-i18n="register">Inscription</button>
+    </div>
+    <div id="login-form" class="auth-form">
+      <div class="form-group"><label data-i18n="username">Identifiant</label><input type="text" id="login-username" placeholder="votre_pseudo" autocomplete="off"/></div>
+      <div class="form-group"><label data-i18n="password">Mot de passe</label><input type="password" id="login-password" placeholder="••••••••"/></div>
+      <div id="login-error" class="form-error hidden"></div>
+      <button class="btn-primary" onclick="handleLogin()" data-i18n="connect">Se connecter</button>
+    </div>
+    <div id="register-form" class="auth-form hidden">
+      <div class="form-group"><label data-i18n="username">Identifiant</label><input type="text" id="reg-username" placeholder="choisir un pseudo" autocomplete="off"/></div>
+      <div class="form-group"><label data-i18n="password">Mot de passe</label><input type="password" id="reg-password" placeholder="••••••••"/></div>
+      <div class="form-group"><label data-i18n="confirm">Confirmer</label><input type="password" id="reg-password2" placeholder="••••••••"/></div>
+      <div id="reg-error" class="form-error hidden"></div>
+      <button class="btn-primary" onclick="handleRegister()" data-i18n="create_account">Créer mon compte</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP ═══════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <nav class="sidebar-nav">
+      <button class="snav-btn active" data-view="list"><span class="snav-icon">📋</span><span data-i18n="my_list">Ma Liste</span></button>
+      <button class="snav-btn" data-view="search"><span class="snav-icon">🔍</span><span data-i18n="search">Rechercher</span></button>
+      <button class="snav-btn" data-view="discover"><span class="snav-icon">✨</span><span data-i18n="discover">À découvrir</span></button>
+      <button class="snav-btn" data-view="favorites"><span class="snav-icon">⭐</span><span data-i18n="favorites">Favoris</span></button>
+      <button class="snav-btn snav-gold" data-view="top10"><span class="snav-icon">🏆</span><span data-i18n="top10">Top 10</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user" onclick="openProfile()">
+        <span id="sb-avatar" class="avatar-initials"></span>
+        <div class="sb-user-info">
+          <span id="sb-username" class="sb-name"></span>
+          <span class="sb-sub" data-i18n="view_profile">Voir le profil →</span>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn lang-btn" onclick="toggleLang()" title="Langue / Language">🇬🇧 EN</button>
+        <button class="icon-btn" onclick="toggleTheme()" title="Thème"><span class="theme-icon">☀</span></button>
+        <button class="icon-btn danger-btn" onclick="handleLogout()" title="Déconnexion">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MOBILE HEADER -->
+  <header class="mobile-header">
+    <div class="header-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <div class="mobile-nav">
+      <button class="mnav-btn active" data-view="list">📋</button>
+      <button class="mnav-btn" data-view="search">🔍</button>
+      <button class="mnav-btn" data-view="discover">✨</button>
+      <button class="mnav-btn" data-view="favorites">⭐</button>
+      <button class="mnav-btn" data-view="top10">🏆</button>
+      <button class="mnav-btn" onclick="openProfile()">👤</button>
+    </div>
+    <button class="icon-btn lang-btn" onclick="toggleLang()" title="Langue">🇬🇧 EN</button>
+    <button class="icon-btn" onclick="toggleTheme()"><span class="theme-icon">☀</span></button>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ── LIST VIEW ── -->
+    <div id="view-list" class="view active">
+      <div class="view-header">
+        <h1 class="view-title" data-i18n="my_list">Ma Liste</h1>
+        <div class="status-tabs">
+          <button class="status-tab active" data-status="all"><span class="tab-lbl" data-i18n="all">Tout</span> <span class="tab-count" id="count-all">0</span></button>
+          <button class="status-tab" data-status="watching"><span class="tab-lbl" data-i18n="watching">En cours</span> <span class="tab-count" id="count-watching">0</span></button>
+          <button class="status-tab" data-status="planToWatch"><span class="tab-lbl" data-i18n="plan">À voir</span> <span class="tab-count" id="count-plan">0</span></button>
+          <button class="status-tab" data-status="completed"><span class="tab-lbl" data-i18n="completed">Terminé</span> <span class="tab-count" id="count-completed">0</span></button>
+        </div>
+      </div>
+      <div class="sort-bar">
+        <span class="sort-lbl" data-i18n="sort_by">Trier</span>
+        <button class="sort-opt active" data-sort="recent" onclick="setListSort('recent')" data-i18n="sort_recent">Récent</button>
+        <button class="sort-opt" data-sort="alpha" onclick="setListSort('alpha')" data-i18n="sort_alpha">A → Z</button>
+        <button class="sort-opt" data-sort="alpha_rev" onclick="setListSort('alpha_rev')" data-i18n="sort_alpha_rev">Z → A</button>
+        <button class="sort-opt" data-sort="score_desc" onclick="setListSort('score_desc')" data-i18n="sort_score_desc">Note ↓</button>
+        <button class="sort-opt" data-sort="score_asc" onclick="setListSort('score_asc')" data-i18n="sort_score_asc">Note ↑</button>
+      </div>
+      <div class="type-section" id="section-series">
+        <div class="type-header"><span>📺</span><span class="type-label" data-type="series">Séries</span></div>
+        <div id="grid-series" class="anime-grid"></div>
+      </div>
+      <div class="type-section" id="section-movies">
+        <div class="type-header"><span>🎬</span><span class="type-label" data-type="movies">Films</span></div>
+        <div id="grid-movies" class="anime-grid"></div>
+      </div>
+      <div id="list-empty" class="empty-state hidden">
+        <div class="empty-icon">🎌</div>
+        <p data-i18n="empty_list">Aucun animé dans cette liste.<br/>Cherchez-en via la recherche ou découvrez !</p>
+      </div>
+    </div>
+
+    <!-- ── SEARCH VIEW ── -->
+    <div id="view-search" class="view">
+      <div class="view-header"><h1 class="view-title" data-i18n="search">Rechercher</h1></div>
+      <div class="search-bar-wrap">
+        <input type="text" id="search-input" class="search-input" placeholder="Naruto, Attack on Titan, Your Name…" data-i18n="search_ph"/>
+        <button class="btn-search" onclick="searchAnime()" data-i18n="search_btn">Rechercher</button>
+      </div>
+      <label class="search-filter-row">
+        <input type="checkbox" id="search-hide-added" onchange="toggleSearchHideAdded()"/>
+        <span class="check-box"></span>
+        <span data-i18n="hide_added">Masquer ceux déjà ajoutés</span>
+      </label>
+      <div class="genre-filters" id="genre-filters">
+        <button class="genre-btn active" data-genre="" data-i18n="genres_all">Tous</button>
+        <button class="genre-btn" data-genre="1">Action</button>
+        <button class="genre-btn" data-genre="2">Adventure</button>
+        <button class="genre-btn" data-genre="4">Comedy</button>
+        <button class="genre-btn" data-genre="8">Drama</button>
+        <button class="genre-btn" data-genre="10">Fantasy</button>
+        <button class="genre-btn" data-genre="14">Horror</button>
+        <button class="genre-btn" data-genre="7">Mystery</button>
+        <button class="genre-btn" data-genre="22">Romance</button>
+        <button class="genre-btn" data-genre="24">Sci-Fi</button>
+        <button class="genre-btn" data-genre="36">Slice of Life</button>
+        <button class="genre-btn" data-genre="30">Sports</button>
+        <button class="genre-btn" data-genre="37">Supernatural</button>
+        <button class="genre-btn" data-genre="41">Thriller</button>
+        <button class="genre-btn" data-genre="18">Mecha</button>
+        <button class="genre-btn" data-genre="62">Isekai</button>
+      </div>
+      <div id="search-results" class="anime-grid"></div>
+      <div id="search-pagination"></div>
+      <div id="search-loading" class="loading-state hidden"><div class="spinner"></div><p data-i18n="searching">Recherche…</p></div>
+      <div id="search-empty" class="empty-state hidden"><div class="empty-icon">🔍</div><p data-i18n="no_results">Aucun résultat.</p></div>
+    </div>
+
+    <!-- ── DISCOVER VIEW ── -->
+    <div id="view-discover" class="view">
+      <div class="view-header">
+        <h1 class="view-title" data-i18n="discover">À Découvrir</h1>
+        <p class="view-subtitle" data-i18n="disc_subtitle">Swipez pour explorer de nouveaux animés</p>
+      </div>
+      <div class="discover-grid">
+        <!-- LEFT: stats panel -->
+        <aside class="discover-side discover-side-left">
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="stats_title">Tes stats</div>
+            <div id="discover-stats" class="ds-stats"></div>
+          </div>
+        </aside>
+
+        <!-- CENTER: discover card + actions -->
+        <div class="discover-center">
+          <div class="discover-card-wrap" id="discover-card-wrap">
+            <div class="discover-loading hidden" id="discover-loading"><div class="spinner"></div><p data-i18n="loading">Chargement…</p></div>
+            <div class="discover-card" id="discover-card">
+              <div class="dc-img-wrap"><img id="dc-img" src="" alt=""/></div>
+              <div class="dc-body">
+                <div class="dc-genres" id="dc-genres"></div>
+                <h2 class="dc-title" id="dc-title"></h2>
+                <div class="dc-meta" id="dc-meta"></div>
+                <div id="dc-trailer" class="dc-trailer-wrap"></div>
+                <p class="dc-synopsis" id="dc-synopsis"></p>
+              </div>
+            </div>
+          </div>
+          <div class="discover-actions" id="discover-actions">
+            <button class="da-btn da-skip" onclick="discoverAction('skip')" title="Pas intéressé">✕</button>
+            <button class="da-btn da-plan" onclick="discoverAction('planToWatch')" title="À voir">🕐</button>
+            <button class="da-btn da-watch" onclick="discoverAction('watching')" title="En cours">▶</button>
+            <button class="da-btn da-done" onclick="discoverAction('completed')" title="Terminé">✓</button>
+          </div>
+          <div class="discover-labels">
+            <span data-i18n="not_interested">Pas intéressé</span>
+            <span data-i18n="to_watch">À voir</span>
+            <span data-i18n="in_progress">En cours</span>
+            <span data-i18n="done">Terminé</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: recommendations panel -->
+        <aside class="discover-side discover-side-right">
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="recos_title">Recommandés pour toi</div>
+            <div class="ds-panel-sub" data-i18n="based_on">Basées sur tes genres préférés</div>
+            <div id="discover-recos" class="ds-recos"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ── FAVORITES VIEW ── -->
+    <div id="view-favorites" class="view">
+      <div class="view-header"><h1 class="view-title" data-i18n="favorites">Mes Favoris</h1></div>
+      <div class="type-section" id="fav-section-series">
+        <div class="type-header"><span>📺</span><span class="type-label" data-type="series">Séries</span></div>
+        <div id="fav-grid-series" class="anime-grid"></div>
+      </div>
+      <div class="type-section" id="fav-section-movies">
+        <div class="type-header"><span>🎬</span><span class="type-label" data-type="movies">Films</span></div>
+        <div id="fav-grid-movies" class="anime-grid"></div>
+      </div>
+      <div id="fav-empty" class="empty-state hidden"><div class="empty-icon">⭐</div><p>Aucun favori.<br/>Marquez des animés terminés comme favoris !</p></div>
+    </div>
+
+    <!-- ── TOP 10 VIEW ── -->
+    <div id="view-top10" class="view">
+      <div class="view-header">
+        <div><h1 class="view-title" data-i18n="top10">Mon Top 10</h1><p class="view-subtitle" data-i18n="drag_reorder">Glissez pour réordonner</p></div>
+      </div>
+      <div class="top10-type-toggle">
+        <button class="t10-toggle active" data-top="series" onclick="switchTop10Type('series')">📺 <span data-i18n="series">Séries</span></button>
+        <button class="t10-toggle" data-top="movies" onclick="switchTop10Type('movies')">🎬 <span data-i18n="movies">Films</span></button>
+      </div>
+      <div id="top10-series-panel" class="top10-panel">
+        <div class="top10-columns">
+          <div class="top10-ranking-col">
+            <div id="top10-list-series" class="top10-list"></div>
+            <div id="top10-empty-series" class="top10-slot-empty hidden">Terminez des séries pour les classer ici !</div>
+          </div>
+          <div class="top10-picker-col">
+            <div class="picker-title" data-i18n="add_ranking">Ajouter au classement</div>
+            <div id="top10-picker-series" class="top10-picker"></div>
+            <div id="top10-picker-empty-series" class="top10-slot-empty hidden"></div>
+          </div>
+        </div>
+      </div>
+      <div id="top10-movies-panel" class="top10-panel" data-hidden="true">
+        <div class="top10-columns">
+          <div class="top10-ranking-col">
+            <div id="top10-list-movies" class="top10-list"></div>
+            <div id="top10-empty-movies" class="top10-slot-empty hidden">Terminez des films pour les classer ici !</div>
+          </div>
+          <div class="top10-picker-col">
+            <div class="picker-title" data-i18n="add_ranking">Ajouter au classement</div>
+            <div id="top10-picker-movies" class="top10-picker"></div>
+            <div id="top10-picker-empty-movies" class="top10-slot-empty hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══════════════ PROFILE MODAL ═══════════════ -->
+<div id="profile-overlay" class="modal-overlay hidden" onclick="closeProfileOutside(event)">
+  <div class="modal modal-wide" id="profile-modal">
+    <button class="modal-close" onclick="closeProfile()">✕</button>
+    <div id="profile-content" class="modal-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ ANIME MODAL ═══════════════ -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="closeModalOutside(event)">
+  <div class="modal" id="anime-modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-content" id="modal-content"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
