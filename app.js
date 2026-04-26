@@ -15,6 +15,16 @@ let currentLang   = 'fr';
 let discoverPool  = [];
 let discoverIndex = 0;
 let discoverPage  = 1;
+let _recoCache    = {};
+
+// Genre name → Jikan ID map (for recommendations)
+const GENRE_MAP = {
+  'Action':1,'Adventure':2,'Comedy':4,'Drama':8,'Fantasy':10,
+  'Horror':14,'Mystery':7,'Romance':22,'Sci-Fi':24,'Slice of Life':36,
+  'Sports':30,'Supernatural':37,'Thriller':41,'Mecha':18,'Isekai':62,
+  'Ecchi':9,'Hentai':12,'Suspense':41,'Award Winning':46,'Erotica':49,
+  'Avant Garde':5,'Boys Love':28,'Girls Love':26,'Gourmet':47
+};
 
 // search pagination state
 let currentSearchPage = 1;
@@ -80,6 +90,12 @@ const LANG = {
     // Toasts
     added_to:'Ajouté : ', added_list:'ajouté à la liste !', deleted:'supprimé.',
     added_top:'Ajouté au Top', films:'Films',
+    // Sidebar / recos
+    recos_title:'Recommandés pour toi', stats_title:'Tes stats',
+    no_recos:'Termine des animés pour avoir des recos !',
+    avg_score:'Note moyenne', top_genres:'Genres préférés',
+    nothing_yet:'Aucun animé pour l\'instant',
+    based_on:'Basées sur tes genres préférés',
   },
   en: {
     // Auth
@@ -137,6 +153,12 @@ const LANG = {
     // Toasts
     added_to:'Added: ', added_list:'added to list!', deleted:'deleted.',
     added_top:'Added to Top', films:'Movies',
+    // Sidebar / recos
+    recos_title:'Recommended for you', stats_title:'Your stats',
+    no_recos:'Complete some anime to get recommendations!',
+    avg_score:'Average score', top_genres:'Top genres',
+    nothing_yet:'No anime yet',
+    based_on:'Based on your top genres',
   }
 };
 
@@ -169,7 +191,7 @@ function applyLang() {
   if (currentView === 'search') refreshSearchCards();
   if (currentView === 'favorites') renderFavorites();
   if (currentView === 'top10') renderTop10();
-  if (currentView === 'discover') showDiscoverCard();
+  if (currentView === 'discover') { showDiscoverCard(); renderDiscoverStats(); renderDiscoverRecos(); }
 }
 
 // ── SCORE CATEGORIES ──────────────────────────────
@@ -319,7 +341,7 @@ function switchView(v) {
   if (v==='search') { if (!Object.keys(_searchCache).length) searchAnime(); }
   if (v==='favorites') renderFavorites();
   if (v==='top10') renderTop10();
-  if (v==='discover') initDiscover();
+  if (v==='discover') { initDiscover(); renderDiscoverStats(); renderDiscoverRecos(); }
 }
 
 // ══ STATUS TABS ════════════════════════════════════
@@ -541,6 +563,123 @@ function seasonLabel(s) {
   return map[s]||s;
 }
 
+function getUserTopGenres(limit) {
+  const list = getList();
+  const counts = {};
+  Object.values(list).forEach(a => {
+    // weight completed > watching > plan
+    const w = a.status==='completed'?3:a.status==='watching'?2:1;
+    (a.genres||[]).forEach(g => { counts[g]=(counts[g]||0)+w; });
+  });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,limit||3);
+}
+
+function getUserAvgScore() {
+  const list = getList();
+  const completed = Object.values(list).filter(a=>a.status==='completed');
+  const globals = completed.map(a=>computeGlobal(a.scores)).filter(v=>v!==null);
+  if (!globals.length) return null;
+  return Math.round((globals.reduce((a,b)=>a+b,0)/globals.length)*10)/10;
+}
+
+function renderDiscoverStats() {
+  const arr = Object.values(getList());
+  const total = arr.length;
+  const completed = arr.filter(a=>a.status==='completed').length;
+  const avg = getUserAvgScore();
+  const top = getUserTopGenres(4);
+  const el = $('discover-stats'); if (!el) return;
+  if (!total) {
+    el.innerHTML = `<div class="ds-empty">${t('nothing_yet')}</div>`;
+    return;
+  }
+  const maxC = top[0]?.[1]||1;
+  el.innerHTML = `
+    <div class="ds-stat-row"><span class="ds-stat-lbl">${t('total')}</span><span class="ds-stat-val">${total}</span></div>
+    <div class="ds-stat-row"><span class="ds-stat-lbl">${t('completed_lbl')}</span><span class="ds-stat-val">${completed}</span></div>
+    ${avg!==null?`<div class="ds-stat-row"><span class="ds-stat-lbl">${t('avg_score')}</span><span class="ds-stat-val ds-stat-star">★ ${avg}/20</span></div>`:''}
+    ${top.length?`<div class="ds-genre-block">
+      <div class="ds-block-title">${t('top_genres')}</div>
+      ${top.map(([g,c])=>`<div class="ds-genre-row">
+        <span class="ds-genre-name">${esc(g)}</span>
+        <div class="ds-genre-track"><div class="ds-genre-fill" style="width:${Math.round((c/maxC)*100)}%"></div></div>
+      </div>`).join('')}
+    </div>`:''}
+  `;
+}
+
+async function renderDiscoverRecos() {
+  const el = $('discover-recos'); if (!el) return;
+  const top = getUserTopGenres(3);
+  if (!top.length) {
+    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
+    return;
+  }
+  // Find first genre that maps to a Jikan ID
+  const genreEntry = top.find(([g])=>GENRE_MAP[g]);
+  if (!genreEntry) {
+    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
+    return;
+  }
+  const [genreName, ] = genreEntry;
+  const genreId = GENRE_MAP[genreName];
+  const userAvg = getUserAvgScore();
+  // Use user's avg score (on /20 → /10) as min, capped between 6.5 and 8.5
+  const minScore = userAvg !== null
+    ? Math.min(8.5, Math.max(6.5, (userAvg/2) - 0.3))
+    : 7;
+  const cacheKey = `${genreId}_${minScore.toFixed(1)}`;
+  if (_recoCache[cacheKey]) { renderRecoCards(el, _recoCache[cacheKey], genreName); return; }
+  el.innerHTML = `<div class="ds-loading"><div class="spinner-sm"></div></div>`;
+  try {
+    await rl();
+    const r = await fetch(`${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=10`);
+    const data = await r.json();
+    const list = getList();
+    const filtered = (data.data||[])
+      .filter(a => !list[a.mal_id] && a.images?.jpg?.image_url)
+      .slice(0, 4)
+      .map(a => ({
+        mal_id: a.mal_id,
+        title: a.title_english||a.title,
+        image: a.images?.jpg?.image_url||'',
+        score: a.score,
+        episodes: a.episodes,
+        synopsis: a.synopsis,
+        genres: a.genres?.map(g=>g.name)||[],
+        themes: a.themes?.map(g=>g.name)||[],
+        year: a.year||null,
+        type: a.type,
+        trailer_id: a.trailer?.youtube_id||null,
+        season: a.season||null,
+      }));
+    _recoCache[cacheKey] = filtered;
+    // also cache in search cache so modal can open them
+    filtered.forEach(a => { _searchCache[a.mal_id] = a; });
+    renderRecoCards(el, filtered, genreName);
+  } catch {
+    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
+  }
+}
+
+function renderRecoCards(el, list, genreName) {
+  if (!list.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
+  el.innerHTML = `
+    <div class="ds-reco-genre">🎯 ${esc(genreName)}</div>
+    ${list.map(a => {
+      const raw = Number(a.score)||0;
+      const score20 = raw ? Math.min(20, raw<=10?raw*2:raw).toFixed(1) : null;
+      return `<div class="ds-reco-card" onclick="openModal(${a.mal_id},'reco')">
+        <img class="ds-reco-thumb" src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy"/>
+        <div class="ds-reco-info">
+          <div class="ds-reco-title">${esc(a.title)}</div>
+          ${score20?`<div class="ds-reco-score">★ ${score20}/20</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
 async function initDiscover() {
   if (discoverPool.length&&discoverIndex<discoverPool.length) { showDiscoverCard(); return; }
   $('discover-loading').classList.remove('hidden');
@@ -601,8 +740,9 @@ function showDiscoverCard() {
   const meta=[];
   if (a.type) meta.push(`<span class="dc-meta-tag ${isMovie(a)?'tag-movie':'tag-series'}">${isMovie(a)?'🎬 Film':'📺 Série'}</span>`);
   if (a.score) {
-    const score20=(a.score*2).toFixed(1);
-    meta.push(`<span class="dc-meta-tag dc-score">★ ${score20}/20</span>`);
+    const raw = Number(a.score)||0;
+    const score20 = Math.min(20, Math.max(0, raw <= 10 ? raw*2 : raw)).toFixed(1);
+    meta.push(`<span class="dc-meta-tag dc-score" title="${t('score_label')}">★ MAL ${score20}/20</span>`);
   }
   if (a.season&&a.season_year) meta.push(`<span class="dc-meta-tag">📅 ${seasonLabel(a.season)} ${a.season_year}</span>`);
   else if (a.year) meta.push(`<span class="dc-meta-tag">📅 ${a.year}</span>`);
@@ -639,7 +779,7 @@ function discoverAction(action) {
   card.style.transition='transform .25s,opacity .25s';
   card.style.transform=action==='skip'?'translateX(-60px) rotate(-3deg)':'translateX(60px) rotate(3deg)';
   card.style.opacity='0';
-  setTimeout(()=>{ card.style.transition=''; card.style.transform=''; card.style.opacity=''; showDiscoverCard(); },260);
+  setTimeout(()=>{ card.style.transition=''; card.style.transform=''; card.style.opacity=''; showDiscoverCard(); renderDiscoverStats(); },260);
 }
 
 // ══ MODAL ═════════════════════════════════════════
@@ -691,7 +831,10 @@ function renderModal(malId) {
   const typeTag=a.type?`<span class="modal-meta-tag ${movie?'tag-movie':'tag-series'}">${movie?'🎬 Film':'📺 '+t('series')}</span>`:'';
   const yearTag=a.year?`<span class="modal-meta-tag">📅 ${a.year}</span>`:'';
   const epsTag=a.episodes?`<span class="modal-meta-tag">📺 ${a.episodes} ${t('eps_label')}</span>`:'';
-  const scoreTag=a.score?`<span class="modal-meta-tag dc-score">★ ${(a.score*2).toFixed(1)}/20</span>`:'';
+  // MAL community score, clamped to /10 then displayed on /20 (max 20)
+  const malRaw = Number(a.score)||0;
+  const mal20  = Math.min(20, Math.max(0, malRaw <= 10 ? malRaw*2 : malRaw)).toFixed(1);
+  const scoreTag = malRaw ? `<span class="modal-meta-tag dc-score" title="${t('score_label')}">★ MAL ${mal20}/20</span>` : '';
   const seasonTag=(a.season&&a.year)?`<span class="modal-meta-tag">🗓 ${seasonLabel(a.season)} ${a.year}</span>`:'';
 
   // Tags: genres + themes + demographics

@@ -150,32 +150,52 @@
         <h1 class="view-title" data-i18n="discover">À Découvrir</h1>
         <p class="view-subtitle" data-i18n="disc_subtitle">Swipez pour explorer de nouveaux animés</p>
       </div>
-      <div class="discover-wrap">
-        <div class="discover-card-wrap" id="discover-card-wrap">
-          <div class="discover-loading hidden" id="discover-loading"><div class="spinner"></div><p data-i18n="loading">Chargement…</p></div>
-          <div class="discover-card" id="discover-card">
-            <div class="dc-img-wrap"><img id="dc-img" src="" alt=""/></div>
-            <div class="dc-body">
-              <div class="dc-genres" id="dc-genres"></div>
-              <h2 class="dc-title" id="dc-title"></h2>
-              <div class="dc-meta" id="dc-meta"></div>
-              <div id="dc-trailer" class="dc-trailer-wrap"></div>
-              <p class="dc-synopsis" id="dc-synopsis"></p>
+      <div class="discover-grid">
+        <!-- LEFT: stats panel -->
+        <aside class="discover-side discover-side-left">
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="stats_title">Tes stats</div>
+            <div id="discover-stats" class="ds-stats"></div>
+          </div>
+        </aside>
+
+        <!-- CENTER: discover card + actions -->
+        <div class="discover-center">
+          <div class="discover-card-wrap" id="discover-card-wrap">
+            <div class="discover-loading hidden" id="discover-loading"><div class="spinner"></div><p data-i18n="loading">Chargement…</p></div>
+            <div class="discover-card" id="discover-card">
+              <div class="dc-img-wrap"><img id="dc-img" src="" alt=""/></div>
+              <div class="dc-body">
+                <div class="dc-genres" id="dc-genres"></div>
+                <h2 class="dc-title" id="dc-title"></h2>
+                <div class="dc-meta" id="dc-meta"></div>
+                <div id="dc-trailer" class="dc-trailer-wrap"></div>
+                <p class="dc-synopsis" id="dc-synopsis"></p>
+              </div>
             </div>
           </div>
+          <div class="discover-actions" id="discover-actions">
+            <button class="da-btn da-skip" onclick="discoverAction('skip')" title="Pas intéressé">✕</button>
+            <button class="da-btn da-plan" onclick="discoverAction('planToWatch')" title="À voir">🕐</button>
+            <button class="da-btn da-watch" onclick="discoverAction('watching')" title="En cours">▶</button>
+            <button class="da-btn da-done" onclick="discoverAction('completed')" title="Terminé">✓</button>
+          </div>
+          <div class="discover-labels">
+            <span data-i18n="not_interested">Pas intéressé</span>
+            <span data-i18n="to_watch">À voir</span>
+            <span data-i18n="in_progress">En cours</span>
+            <span data-i18n="done">Terminé</span>
+          </div>
         </div>
-        <div class="discover-actions" id="discover-actions">
-          <button class="da-btn da-skip" onclick="discoverAction('skip')" title="Pas intéressé">✕</button>
-          <button class="da-btn da-plan" onclick="discoverAction('planToWatch')" title="À voir">🕐</button>
-          <button class="da-btn da-watch" onclick="discoverAction('watching')" title="En cours">▶</button>
-          <button class="da-btn da-done" onclick="discoverAction('completed')" title="Terminé">✓</button>
-        </div>
-        <div class="discover-labels">
-          <span data-i18n="not_interested">Pas intéressé</span>
-          <span data-i18n="to_watch">À voir</span>
-          <span data-i18n="in_progress">En cours</span>
-          <span data-i18n="done">Terminé</span>
-        </div>
+
+        <!-- RIGHT: recommendations panel -->
+        <aside class="discover-side discover-side-right">
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="recos_title">Recommandés pour toi</div>
+            <div class="ds-panel-sub" data-i18n="based_on">Basées sur tes genres préférés</div>
+            <div id="discover-recos" class="ds-recos"></div>
+          </div>
+        </aside>
       </div>
     </div>
 
