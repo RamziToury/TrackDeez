@@ -3,7 +3,20 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AniTrack</title>
+  <title>Track Deez</title>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#7c5cfc"/>
+        <stop offset="55%" stop-color="#a47dff"/>
+        <stop offset="100%" stop-color="#06d2e0"/>
+      </linearGradient>
+      <linearGradient id="logoGradLight" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#6040e8"/>
+        <stop offset="100%" stop-color="#0891b2"/>
+      </linearGradient>
+    </defs>
+  </svg>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -22,7 +35,13 @@
     <div class="auth-orb orb3"></div>
   </div>
   <div class="auth-card">
-    <div class="auth-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <div class="auth-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="9" fill="url(#logoGrad)"/>
+        <path d="M11 9 L23 16 L11 23 Z" fill="white"/>
+      </svg>
+      <span class="logo-text">Track<span class="logo-accent">Deez</span></span>
+    </div>
     <p class="auth-tagline" data-i18n="tagline">Suivez vos animés. Célébrez chaque épisode.</p>
     <div class="auth-tabs">
       <button class="auth-tab active" data-tab="login" data-i18n="login">Connexion</button>
@@ -49,13 +68,30 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <div class="sidebar-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="9" fill="url(#logoGrad)"/>
+        <path d="M11 9 L23 16 L11 23 Z" fill="white"/>
+      </svg>
+      <span class="logo-text">Track<span class="logo-accent">Deez</span></span>
+    </div>
     <nav class="sidebar-nav">
-      <button class="snav-btn active" data-view="list"><span class="snav-icon">📋</span><span data-i18n="my_list">Ma Liste</span></button>
-      <button class="snav-btn" data-view="search"><span class="snav-icon">🔍</span><span data-i18n="search">Rechercher</span></button>
-      <button class="snav-btn" data-view="discover"><span class="snav-icon">✨</span><span data-i18n="discover">À découvrir</span></button>
-      <button class="snav-btn" data-view="favorites"><span class="snav-icon">⭐</span><span data-i18n="favorites">Favoris</span></button>
-      <button class="snav-btn snav-gold" data-view="top10"><span class="snav-icon">🏆</span><span data-i18n="top10">Top 10</span></button>
+      <button class="snav-btn active" data-view="list">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="my_list">Ma Liste</span>
+      </button>
+      <button class="snav-btn" data-view="search">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="search">Rechercher</span>
+      </button>
+      <button class="snav-btn" data-view="discover">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="discover">À découvrir</span>
+      </button>
+      <button class="snav-btn snav-gold" data-view="top10">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="top10">Top 10</span>
+      </button>
     </nav>
     <div class="sidebar-bottom">
       <div class="sidebar-user" onclick="openProfile()">
@@ -75,14 +111,29 @@
 
   <!-- MOBILE HEADER -->
   <header class="mobile-header">
-    <div class="header-logo"><span class="logo-icon">⬡</span><span class="logo-text">AniTrack</span></div>
+    <div class="header-logo">
+      <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="9" fill="url(#logoGrad)"/>
+        <path d="M11 9 L23 16 L11 23 Z" fill="white"/>
+      </svg>
+      <span class="logo-text">Track<span class="logo-accent">Deez</span></span>
+    </div>
     <div class="mobile-nav">
-      <button class="mnav-btn active" data-view="list">📋</button>
-      <button class="mnav-btn" data-view="search">🔍</button>
-      <button class="mnav-btn" data-view="discover">✨</button>
-      <button class="mnav-btn" data-view="favorites">⭐</button>
-      <button class="mnav-btn" data-view="top10">🏆</button>
-      <button class="mnav-btn" onclick="openProfile()">👤</button>
+      <button class="mnav-btn active" data-view="list" aria-label="Ma Liste">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+      <button class="mnav-btn" data-view="search" aria-label="Rechercher">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="mnav-btn" data-view="discover" aria-label="Découvrir">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L19 9.5l-3.5 3.4.9 5.1L12 15.5l-4.4 2.5.9-5.1L5 9.5l5.1-1.9L12 3z"/></svg>
+      </button>
+      <button class="mnav-btn" data-view="top10" aria-label="Top 10">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+      </button>
+      <button class="mnav-btn" onclick="openProfile()" aria-label="Profil">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
     </div>
     <button class="icon-btn lang-btn" onclick="toggleLang()" title="Langue">🇬🇧 EN</button>
     <button class="icon-btn" onclick="toggleTheme()"><span class="theme-icon">☀</span></button>
@@ -100,6 +151,7 @@
           <button class="status-tab" data-status="watching"><span class="tab-lbl" data-i18n="watching">En cours</span> <span class="tab-count" id="count-watching">0</span></button>
           <button class="status-tab" data-status="planToWatch"><span class="tab-lbl" data-i18n="plan">À voir</span> <span class="tab-count" id="count-plan">0</span></button>
           <button class="status-tab" data-status="completed"><span class="tab-lbl" data-i18n="completed">Terminé</span> <span class="tab-count" id="count-completed">0</span></button>
+          <button class="status-tab status-tab-fav" data-status="favorites"><span class="tab-star">⭐</span><span class="tab-lbl" data-i18n="favorites">Favoris</span> <span class="tab-count" id="count-fav">0</span></button>
         </div>
       </div>
       <div class="sort-bar">
@@ -170,8 +222,21 @@
         <!-- LEFT: stats panel -->
         <aside class="discover-side discover-side-left">
           <div class="ds-panel">
-            <div class="ds-panel-title" data-i18n="stats_title">Tes stats</div>
-            <div id="discover-stats" class="ds-stats"></div>
+            <div class="ds-panel-title" data-i18n="recos_title">Recommandés pour toi</div>
+            <div class="ds-panel-sub" data-i18n="based_on">Basées sur tes genres préférés</div>
+            <div id="discover-recos" class="ds-recos"></div>
+          </div>
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="rating_legend_title">Légende — Rating</div>
+            <div class="ds-panel-sub" data-i18n="rating_legend_sub">Public visé par l'œuvre</div>
+            <div class="ds-rating-legend">
+              <div class="rating-row"><span class="rating-tag rating-low">G</span><span class="rating-desc" data-i18n="rating_g">Tout public</span></div>
+              <div class="rating-row"><span class="rating-tag rating-low">PG</span><span class="rating-desc" data-i18n="rating_pg">Enfants</span></div>
+              <div class="rating-row"><span class="rating-tag rating-mid">PG-13</span><span class="rating-desc" data-i18n="rating_pg13">Ados 13+</span></div>
+              <div class="rating-row"><span class="rating-tag rating-high">R</span><span class="rating-desc" data-i18n="rating_r">17+ violence/langage</span></div>
+              <div class="rating-row"><span class="rating-tag rating-high">R+</span><span class="rating-desc" data-i18n="rating_rplus">Nudité légère</span></div>
+              <div class="rating-row"><span class="rating-tag rating-extreme">Rx</span><span class="rating-desc" data-i18n="rating_rx">Hentai</span></div>
+            </div>
           </div>
         </aside>
 
@@ -185,7 +250,6 @@
                 <div class="dc-genres" id="dc-genres"></div>
                 <h2 class="dc-title" id="dc-title"></h2>
                 <div class="dc-meta" id="dc-meta"></div>
-                <div id="dc-trailer" class="dc-trailer-wrap"></div>
                 <p class="dc-synopsis" id="dc-synopsis"></p>
               </div>
             </div>
@@ -207,26 +271,12 @@
         <!-- RIGHT: recommendations panel -->
         <aside class="discover-side discover-side-right">
           <div class="ds-panel">
-            <div class="ds-panel-title" data-i18n="recos_title">Recommandés pour toi</div>
-            <div class="ds-panel-sub" data-i18n="based_on">Basées sur tes genres préférés</div>
-            <div id="discover-recos" class="ds-recos"></div>
+            <div class="ds-panel-title" data-i18n="trailer_title">Trailer</div>
+            <div class="ds-panel-sub" id="dc-trailer-sub"></div>
+            <div id="discover-trailer" class="ds-trailer"></div>
           </div>
         </aside>
       </div>
-    </div>
-
-    <!-- ── FAVORITES VIEW ── -->
-    <div id="view-favorites" class="view">
-      <div class="view-header"><h1 class="view-title" data-i18n="favorites">Mes Favoris</h1></div>
-      <div class="type-section" id="fav-section-series">
-        <div class="type-header"><span>📺</span><span class="type-label" data-type="series">Séries</span></div>
-        <div id="fav-grid-series" class="anime-grid"></div>
-      </div>
-      <div class="type-section" id="fav-section-movies">
-        <div class="type-header"><span>🎬</span><span class="type-label" data-type="movies">Films</span></div>
-        <div id="fav-grid-movies" class="anime-grid"></div>
-      </div>
-      <div id="fav-empty" class="empty-state hidden"><div class="empty-icon">⭐</div><p>Aucun favori.<br/>Marquez des animés terminés comme favoris !</p></div>
     </div>
 
     <!-- ── TOP 10 VIEW ── -->
@@ -237,6 +287,8 @@
       <div class="top10-type-toggle">
         <button class="t10-toggle active" data-top="series" onclick="switchTop10Type('series')">📺 <span data-i18n="series">Séries</span></button>
         <button class="t10-toggle" data-top="movies" onclick="switchTop10Type('movies')">🎬 <span data-i18n="movies">Films</span></button>
+        <button class="t10-toggle" data-top="openings" onclick="switchTop10Type('openings')">▶ <span data-i18n="top_op">Openings</span></button>
+        <button class="t10-toggle" data-top="endings" onclick="switchTop10Type('endings')">⏹ <span data-i18n="top_ed">Endings</span></button>
       </div>
       <div id="top10-series-panel" class="top10-panel">
         <div class="top10-columns">
@@ -264,6 +316,32 @@
           </div>
         </div>
       </div>
+      <div id="top10-openings-panel" class="top10-panel" data-hidden="true">
+        <div class="top10-columns">
+          <div class="top10-ranking-col">
+            <div id="top10-list-openings" class="top10-list"></div>
+            <div id="top10-empty-openings" class="top10-slot-empty hidden" data-i18n="t10_op_empty">Favorise des openings pour les classer ici !</div>
+          </div>
+          <div class="top10-picker-col">
+            <div class="picker-title" data-i18n="add_ranking">Ajouter au classement</div>
+            <div id="top10-picker-openings" class="top10-picker"></div>
+            <div id="top10-picker-empty-openings" class="top10-slot-empty hidden"></div>
+          </div>
+        </div>
+      </div>
+      <div id="top10-endings-panel" class="top10-panel" data-hidden="true">
+        <div class="top10-columns">
+          <div class="top10-ranking-col">
+            <div id="top10-list-endings" class="top10-list"></div>
+            <div id="top10-empty-endings" class="top10-slot-empty hidden" data-i18n="t10_ed_empty">Favorise des endings pour les classer ici !</div>
+          </div>
+          <div class="top10-picker-col">
+            <div class="picker-title" data-i18n="add_ranking">Ajouter au classement</div>
+            <div id="top10-picker-endings" class="top10-picker"></div>
+            <div id="top10-picker-empty-endings" class="top10-slot-empty hidden"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -282,6 +360,22 @@
   <div class="modal" id="anime-modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-content" id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ BADGE UNLOCK OVERLAY ═══════════════ -->
+<div id="badge-unlock-overlay" class="hidden" onclick="closeBadgeUnlock()">
+  <div class="bu-confetti" id="bu-confetti"></div>
+  <div class="bu-card" onclick="event.stopPropagation()">
+    <div class="bu-glow"></div>
+    <div class="bu-shine"></div>
+    <div class="bu-rays"></div>
+    <div class="bu-headline" data-i18n="new_badge">FÉLICITATIONS !</div>
+    <div class="bu-emoji" id="bu-emoji">🏆</div>
+    <div class="bu-sub-top" data-i18n="new_badge_sub">Nouveau badge débloqué</div>
+    <div class="bu-label" id="bu-label">Otaku</div>
+    <div class="bu-sub" id="bu-progress-text">Tu progresses bien !</div>
+    <button class="bu-btn" onclick="closeBadgeUnlock()" data-i18n="awesome">Génial !</button>
   </div>
 </div>
 

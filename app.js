@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════
-   AniTrack v4
+   Track Deez v5
 ══════════════════════════════════════════════════ */
 
 const JIKAN = 'https://api.jikan.moe/v4';
@@ -16,10 +16,115 @@ let discoverPool  = [];
 let discoverIndex = 0;
 let discoverPage  = 1;
 let _recoCache    = {};
+// Per-genre rolling pool: { genreId: { items: [], page: 1, done: false, mode: 'score'|'recent' } }
+let _recoPools    = {};
+let _recoFallback = null; // top-rated overall, lazy-loaded
 let listSortMode  = 'recent';
 let searchHideAdded = false;
 let _modalTab     = 'details';
 let _charCache    = {};
+let _themesCache  = {};
+
+// Profile progression badges (based on completed anime count)
+const BADGES = [
+  { key:'neophyte',  labelFr:'Néophyte',     labelEn:'Neophyte',     emoji:'🌱', min:0,   max:9,         color:'#22c67a' },
+  { key:'initie',    labelFr:'Initié',       labelEn:'Initiate',     emoji:'⚔️', min:10,  max:29,        color:'#3b82f6' },
+  { key:'otaku',     labelFr:'Otaku',        labelEn:'Otaku',        emoji:'🔥', min:30,  max:99,        color:'#ec4899' },
+  { key:'encyclo',   labelFr:'Encyclopédie', labelEn:'Encyclopedia', emoji:'📚', min:100, max:Infinity,  color:'#f6c90e' },
+];
+
+function getUserBadge(completedCount) {
+  for (const b of BADGES) {
+    if (completedCount >= b.min && completedCount <= b.max) return b;
+  }
+  return BADGES[BADGES.length - 1];
+}
+
+function badgeLabel(b) { return currentLang === 'en' ? b.labelEn : b.labelFr; }
+
+// Detect a tier upgrade and trigger the unlock animation
+function checkBadgeUnlock() {
+  if (!currentUser) return;
+  const data = getUserData(currentUser);
+  const completed = Object.values(data.list||{}).filter(a => a.status === 'completed').length;
+  const current = getUserBadge(completed);
+  const prev = data.lastBadge;
+  // First time tracking: just store silently (no retroactive popup)
+  if (!prev) {
+    data.lastBadge = current.key;
+    saveUserData(currentUser, data);
+    return;
+  }
+  const prevIdx = BADGES.findIndex(b => b.key === prev);
+  const currIdx = BADGES.findIndex(b => b.key === current.key);
+  if (currIdx > prevIdx) {
+    data.lastBadge = current.key;
+    saveUserData(currentUser, data);
+    showBadgeUnlock(current);
+  }
+}
+
+function showBadgeUnlock(badge) {
+  const overlay = document.getElementById('badge-unlock-overlay');
+  if (!overlay) return;
+  overlay.style.setProperty('--badge-color', badge.color);
+  document.getElementById('bu-emoji').textContent = badge.emoji;
+  document.getElementById('bu-label').textContent = badgeLabel(badge);
+  // Update progress text for context
+  const progEl = document.getElementById('bu-progress-text');
+  if (progEl && currentUser) {
+    const completed = Object.values(getList()).filter(a => a.status === 'completed').length;
+    progEl.textContent = `${completed} ${t('total_completed')}`;
+  }
+  emitConfetti();
+  // Reset state so animations re-trigger every time
+  overlay.classList.remove('animate', 'closing');
+  overlay.classList.add('hidden');
+  // Force reflow to flush state
+  void overlay.offsetWidth;
+  // Now show + trigger
+  overlay.classList.remove('hidden');
+  void overlay.offsetWidth;
+  overlay.classList.add('animate');
+}
+
+// Manual trigger for preview / testing — ignores tier progression check
+function previewBadgeAnimation() {
+  if (!currentUser) return;
+  const completed = Object.values(getList()).filter(a => a.status === 'completed').length;
+  showBadgeUnlock(getUserBadge(completed));
+}
+
+function closeBadgeUnlock() {
+  const overlay = document.getElementById('badge-unlock-overlay');
+  if (!overlay) return;
+  overlay.classList.add('closing');
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('animate', 'closing');
+    const c = document.getElementById('bu-confetti');
+    if (c) c.innerHTML = '';
+  }, 380);
+}
+
+function emitConfetti() {
+  const container = document.getElementById('bu-confetti');
+  if (!container) return;
+  container.innerHTML = '';
+  const colors = ['#7c5cfc', '#06d2e0', '#f6c90e', '#ec4899', '#22c67a', '#a47dff', '#ffffff'];
+  const shapes = ['rect', 'circle', 'rect', 'rect']; // weighted toward rects
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece confetti-' + shapes[Math.floor(Math.random()*shapes.length)];
+    piece.style.left = (Math.random() * 100) + '%';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.animationDuration = (1.8 + Math.random()*1.6) + 's';
+    piece.style.animationDelay = (Math.random()*0.6) + 's';
+    piece.style.setProperty('--rot-end', (Math.random()*1080 - 540) + 'deg');
+    piece.style.setProperty('--x-drift', ((Math.random()*200) - 100) + 'px');
+    container.appendChild(piece);
+  }
+}
 
 const CHAR_AXES = [
   { key:'charadesign', emojiFr:'✏️', labelFr:'Character Design',  labelEn:'Character Design' },
@@ -106,6 +211,25 @@ const LANG = {
     avg_score:'Note moyenne', top_genres:'Genres préférés',
     nothing_yet:'Aucun animé pour l\'instant',
     based_on:'Basées sur tes genres préférés',
+    new_badge:'FÉLICITATIONS !', new_badge_sub:'Nouveau badge débloqué', awesome:'Génial !',
+    test_animation:'Tester l\'animation', total_completed:'animés terminés',
+    rating_legend_title:'Légende — Rating', rating_legend_sub:'Public visé par l\'œuvre',
+    rating_g:'Tout public', rating_pg:'Enfants', rating_pg13:'Ados 13+',
+    rating_r:'17+ violence/langage', rating_rplus:'Nudité légère', rating_rx:'Hentai',
+    trailer_title:'Trailer', no_trailer_panel:'Pas de bande-annonce disponible pour cet animé.',
+    play_trailer:'Lancer le trailer', watch_on_yt:'Voir sur YouTube',
+    tab_music:'🎵 Musique', loading_music:'Chargement des musiques…',
+    no_themes:'Aucun opening / ending référencé pour cet animé.',
+    openings:'Openings', endings:'Endings',
+    listen_on_yt:'Écouter sur YouTube', music_global:'Note musique globale',
+    music_like:'J\'aime', music_dislike:'Je n\'aime pas', music_favorite:'Favori',
+    top_op:'Openings', top_ed:'Endings',
+    t10_op_empty:'Favorise des openings pour les classer ici !',
+    t10_ed_empty:'Favorise des endings pour les classer ici !',
+    t10_op_picker_empty:'Aucun opening favorisé. Marque des tracks ⭐ dans l\'onglet Musique d\'un animé.',
+    t10_ed_picker_empty:'Aucun ending favorisé. Marque des tracks ⭐ dans l\'onglet Musique d\'un animé.',
+    t10_full_op:'Top 10 complet ! Retire un opening pour en ajouter un autre.',
+    t10_full_ed:'Top 10 complet ! Retire un ending pour en ajouter un autre.',
     // Sort & filters
     sort_by:'Trier', sort_recent:'Récent', sort_alpha:'A → Z',
     sort_alpha_rev:'Z → A', sort_score_desc:'Note ↓', sort_score_asc:'Note ↑',
@@ -179,6 +303,25 @@ const LANG = {
     avg_score:'Average score', top_genres:'Top genres',
     nothing_yet:'No anime yet',
     based_on:'Based on your top genres',
+    new_badge:'CONGRATULATIONS!', new_badge_sub:'New badge unlocked', awesome:'Awesome!',
+    test_animation:'Preview animation', total_completed:'anime completed',
+    rating_legend_title:'Legend — Audience rating', rating_legend_sub:'Intended audience',
+    rating_g:'All ages', rating_pg:'Children', rating_pg13:'Teens 13+',
+    rating_r:'17+ violence/language', rating_rplus:'Mild nudity', rating_rx:'Hentai',
+    trailer_title:'Trailer', no_trailer_panel:'No trailer available for this anime.',
+    play_trailer:'Play trailer', watch_on_yt:'Watch on YouTube',
+    tab_music:'🎵 Music', loading_music:'Loading themes…',
+    no_themes:'No opening/ending listed for this anime.',
+    openings:'Openings', endings:'Endings',
+    listen_on_yt:'Listen on YouTube', music_global:'Music global score',
+    music_like:'Like', music_dislike:'Dislike', music_favorite:'Favorite',
+    top_op:'Openings', top_ed:'Endings',
+    t10_op_empty:'Favorite some openings to rank them here!',
+    t10_ed_empty:'Favorite some endings to rank them here!',
+    t10_op_picker_empty:'No favorited openings yet. Mark tracks as ⭐ in the Music tab of an anime.',
+    t10_ed_picker_empty:'No favorited endings yet. Mark tracks as ⭐ in the Music tab of an anime.',
+    t10_full_op:'Top 10 full! Remove an opening to add another.',
+    t10_full_ed:'Top 10 full! Remove an ending to add another.',
     // Sort & filters
     sort_by:'Sort', sort_recent:'Recent', sort_alpha:'A → Z',
     sort_alpha_rev:'Z → A', sort_score_desc:'Score ↓', sort_score_asc:'Score ↑',
@@ -226,11 +369,12 @@ function applyLang() {
 
 // ── SCORE CATEGORIES ──────────────────────────────
 const SCORE_CATS = [
-  { key:'story',      labelFr:'Histoire',                 labelEn:'Story',              emoji:'📖' },
-  { key:'animation',  labelFr:'Animation',                labelEn:'Animation',           emoji:'🎨' },
-  { key:'music',      labelFr:'Musiques & OST',           labelEn:'Music & OST',         emoji:'🎵' },
-  { key:'chardesign', labelFr:'Character Design',         labelEn:'Character Design',    emoji:'✏️' },
-  { key:'chardev',    labelFr:'Développement des persos', labelEn:'Character Development',emoji:'🌱' },
+  { key:'story',      labelFr:'Histoire',                 labelEn:'Story',                 emoji:'📖' },
+  { key:'animation',  labelFr:'Animation',                labelEn:'Animation',             emoji:'🎨' },
+  { key:'music',      labelFr:'Musiques & OST',           labelEn:'Music & OST',           emoji:'🎵' },
+  { key:'chardesign', labelFr:'Character Design',         labelEn:'Character Design',      emoji:'✏️' },
+  { key:'chardev',    labelFr:'Développement des persos', labelEn:'Character Development', emoji:'🌱' },
+  { key:'ambiance',   labelFr:'Ambiance',                 labelEn:'Atmosphere',            emoji:'🌙' },
 ];
 
 function scoreCatLabel(cat) {
@@ -245,6 +389,52 @@ function computeGlobal(scores) {
 }
 
 function isMovie(a) { return a?.type === 'Movie'; }
+
+// ── TRAILER ID extraction (handles all Jikan response shapes) ──
+function extractTrailerId(t) {
+  if (!t) return null;
+  if (typeof t === 'string') return /^[\w-]{11}$/.test(t) ? t : null;
+  if (t.youtube_id) return t.youtube_id;
+  if (t.url) {
+    const m = String(t.url).match(/(?:youtu\.be\/|[?&]v=|\/embed\/)([\w-]{11})/);
+    if (m) return m[1];
+  }
+  if (t.embed_url) {
+    const m = String(t.embed_url).match(/\/embed\/([\w-]{11})/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// ── ANIME STATUS (airing/complete/upcoming) ──
+function getStatusInfo(raw) {
+  if (!raw) return null;
+  const s = String(raw).toLowerCase();
+  if (s.includes('not yet') || s === 'upcoming') {
+    return { key:'upcoming', labelFr:'Prochainement', labelEn:'Upcoming' };
+  }
+  if (s.includes('finished') || s === 'complete') {
+    return { key:'complete', labelFr:'Terminé', labelEn:'Finished' };
+  }
+  if (s.includes('airing') || s === 'airing') {
+    return { key:'airing', labelFr:'En cours', labelEn:'Airing' };
+  }
+  return null;
+}
+
+// ── ANIME RATING (G / PG / PG-13 / R / R+ / Rx) ──
+function getRatingInfo(raw) {
+  if (!raw) return null;
+  const r = String(raw).toLowerCase().replace(/\s+/g,'');
+  // Order matters: PG-13 before PG, R+ before R, Rx before R
+  if (r.startsWith('pg-13') || r.startsWith('pg13')) return { tier:'mid', labelFr:'PG-13 — 13+', labelEn:'PG-13 — Teens 13+' };
+  if (r.startsWith('pg'))                            return { tier:'low', labelFr:'PG — Enfants', labelEn:'PG — Children' };
+  if (r.startsWith('r+') || r.includes('mildnudity'))return { tier:'high', labelFr:'R+ — Nudité légère', labelEn:'R+ — Mild Nudity' };
+  if (r.startsWith('rx') || r.includes('hentai'))    return { tier:'extreme', labelFr:'Rx — Hentai', labelEn:'Rx — Hentai' };
+  if (r.startsWith('r'))                             return { tier:'high', labelFr:'R — 17+', labelEn:'R — 17+' };
+  if (r.startsWith('g'))                             return { tier:'low', labelFr:'G — Tout public', labelEn:'G — All Ages' };
+  return null;
+}
 
 // ══ STORAGE ══════════════════════════════════════
 function getDB() {
@@ -266,7 +456,14 @@ function saveList(list) {
   if (!db.users[currentUser]) db.users[currentUser]={};
   db.users[currentUser].list=list; saveDB(db);
 }
-function getTop10() { return getUserData(currentUser).top10 || {series:[],movies:[]}; }
+function getTop10() {
+  const t = getUserData(currentUser).top10 || {};
+  if (!t.series)   t.series = [];
+  if (!t.movies)   t.movies = [];
+  if (!t.openings) t.openings = [];
+  if (!t.endings)  t.endings = [];
+  return t;
+}
 function saveTop10(t) {
   const db=getDB();
   if (!db.users[currentUser]) db.users[currentUser]={};
@@ -343,7 +540,8 @@ function loginUser(u) {
   currentLang = getUserData(u).lang || 'fr';
   applyLang();
   discoverPool=[]; discoverIndex=0; discoverPage=1;
-  _searchCache={}; _recoCache={}; currentFilter='all'; currentGenre='';
+  _searchCache={}; _recoCache={}; _recoPools={}; _recoFallback=null;
+  currentFilter='all'; currentGenre='';
   currentSearchPage=1; searchTotalPages=1;
   document.querySelectorAll('.status-tab').forEach(t2=>t2.classList.remove('active'));
   document.querySelector('.status-tab[data-status="all"]')?.classList.add('active');
@@ -353,6 +551,8 @@ function loginUser(u) {
   document.querySelectorAll('.snav-btn,.mnav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('[data-view="list"]').forEach(b=>b.classList.add('active'));
   updateCounts();
+  // Baseline-store current badge on login so we don't fire retroactive popups
+  checkBadgeUnlock();
 }
 
 function handleLogout() {
@@ -366,16 +566,45 @@ function showErr(el,m) { el.textContent=m; el.classList.remove('hidden'); }
 
 // ══ SYNOPSIS TRANSLATION ═══════════════════════════
 function getTransCache() {
-  return JSON.parse(localStorage.getItem('anitrack_translations') || '{}');
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem('anitrack_translations') || '{}'); } catch {}
+  // Sweep out any poisoned entries from previous broken translations
+  let dirty = false;
+  for (const k in c) {
+    if (typeof c[k] !== 'string' || /MYMEMORY WARNING|QUERY LENGTH LIMIT|YOU USED ALL AVAILABLE FREE/i.test(c[k])) {
+      delete c[k]; dirty = true;
+    }
+  }
+  if (dirty) {
+    try { localStorage.setItem('anitrack_translations', JSON.stringify(c)); } catch {}
+  }
+  return c;
 }
 function saveTransCache(c) {
   try { localStorage.setItem('anitrack_translations', JSON.stringify(c)); } catch {}
 }
 
-async function translateText(text, targetLang) {
-  if (!text) return '';
-  if (targetLang === 'en') return text;
-  // MyMemory has a 500-char per-request limit for free tier — chunk by sentence
+// Detect API error messages so we never cache or display them
+function looksLikeTranslationError(s) {
+  if (!s) return true;
+  return /MYMEMORY WARNING|QUERY LENGTH LIMIT|YOU USED ALL AVAILABLE FREE/i.test(s);
+}
+
+// Primary: Google Translate gtx endpoint (no auth, generous limits, used by extensions)
+async function translateWithGoogle(text, targetLang) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(text)}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('google http ' + r.status);
+  const d = await r.json();
+  // Response shape: [[[translated, original, ...], ...], ...]
+  const segments = (Array.isArray(d) && Array.isArray(d[0])) ? d[0] : [];
+  const out = segments.map(seg => seg && seg[0] ? seg[0] : '').join('');
+  if (!out || looksLikeTranslationError(out)) throw new Error('google empty/error');
+  return out;
+}
+
+// Fallback: MyMemory (chunked by sentence, ~480 char limit)
+async function translateWithMyMemory(text, targetLang) {
   const chunks = [];
   let buf = '';
   for (const sentence of text.split(/(?<=[.!?])\s+/)) {
@@ -389,24 +618,50 @@ async function translateText(text, targetLang) {
   if (buf) chunks.push(buf.trim());
   const out = [];
   for (const c of chunks) {
-    try {
-      const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(c)}&langpair=en|${targetLang}`);
-      const d = await r.json();
-      out.push(d.responseData?.translatedText || c);
-    } catch { out.push(c); }
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(c)}&langpair=en|${encodeURIComponent(targetLang)}`);
+    const d = await r.json();
+    const piece = d.responseData?.translatedText || '';
+    if (looksLikeTranslationError(piece) || d.responseStatus === 429) {
+      throw new Error('mymemory error/quota');
+    }
+    out.push(piece);
   }
   return out.join(' ');
+}
+
+async function translateText(text, targetLang) {
+  if (!text || targetLang === 'en') return text || '';
+  // 1. Try Google first
+  try {
+    const g = await translateWithGoogle(text, targetLang);
+    if (g) return g;
+  } catch {}
+  // 2. Fallback to MyMemory
+  try {
+    const m = await translateWithMyMemory(text, targetLang);
+    if (m) return m;
+  } catch {}
+  // 3. Both failed → return original (English) so the user always sees something readable
+  return text;
 }
 
 async function getTranslatedSynopsis(malId, originalEn, targetLang) {
   if (!originalEn || targetLang === 'en') return originalEn || '';
   const cache = getTransCache();
   const key = `${malId}_${targetLang}`;
+  // Self-heal: drop any previously-cached error/warning text
+  if (cache[key] && looksLikeTranslationError(cache[key])) {
+    delete cache[key];
+    saveTransCache(cache);
+  }
   if (cache[key]) return cache[key];
   const translated = await translateText(originalEn, targetLang);
-  cache[key] = translated;
-  saveTransCache(cache);
-  return translated;
+  // Only cache real translations (not the original fallback, not errors)
+  if (translated && translated !== originalEn && !looksLikeTranslationError(translated)) {
+    cache[key] = translated;
+    saveTransCache(cache);
+  }
+  return translated || originalEn;
 }
 
 async function applySynopsisTranslation(elId, malId, originalText) {
@@ -460,7 +715,18 @@ function switchView(v) {
   if (target) target.classList.add('active');
   if (v==='list') renderListView();
   if (v==='search') { if (!Object.keys(_searchCache).length) searchAnime(); }
-  if (v==='favorites') renderFavorites();
+  if (v==='favorites') {
+    // Favorites is now a filter inside list view
+    document.querySelectorAll('.snav-btn,.mnav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('[data-view="list"]').forEach(b=>b.classList.add('active'));
+    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+    $('view-list').classList.add('active');
+    currentView='list';
+    currentFilter='favorites';
+    document.querySelectorAll('.status-tab').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.status-tab[data-status="favorites"]')?.classList.add('active');
+    renderListView();
+  }
   if (v==='top10') renderTop10();
   if (v==='discover') { initDiscover(); renderDiscoverStats(); renderDiscoverRecos(); }
 }
@@ -495,6 +761,8 @@ function updateCounts() {
   $('count-watching').textContent=arr.filter(a=>a.status==='watching').length;
   $('count-plan').textContent=arr.filter(a=>a.status==='planToWatch').length;
   $('count-completed').textContent=arr.filter(a=>a.status==='completed').length;
+  const favEl=$('count-fav');
+  if (favEl) favEl.textContent=arr.filter(a=>a.favorite).length;
 }
 
 // ══ LIST SORT ══════════════════════════════════════
@@ -515,7 +783,10 @@ function setListSort(mode) {
 // ══ RENDER LIST ════════════════════════════════════
 function renderListView() {
   const all=Object.values(getList());
-  let items=currentFilter==='all'?all:all.filter(a=>a.status===currentFilter);
+  let items;
+  if (currentFilter==='all') items=all;
+  else if (currentFilter==='favorites') items=all.filter(a=>a.favorite);
+  else items=all.filter(a=>a.status===currentFilter);
   // Apply sort
   const sorter = LIST_SORTERS[listSortMode] || LIST_SORTERS.recent;
   items = [...items].sort(sorter);
@@ -544,16 +815,10 @@ function renderListView() {
   updateCounts();
 }
 
-// ══ RENDER FAVORITES ══════════════════════════════
+// ══ RENDER FAVORITES (now an alias to list view filtered) ══
 function renderFavorites() {
-  const favs=Object.values(getList()).filter(a=>a.favorite);
-  const series=favs.filter(a=>!isMovie(a));
-  const movies=favs.filter(a=>isMovie(a));
-  $('fav-grid-series').innerHTML=series.map(a=>buildCard(a,'list')).join('');
-  $('fav-grid-movies').innerHTML=movies.map(a=>buildCard(a,'list')).join('');
-  $('fav-section-series').style.display=series.length?'':'none';
-  $('fav-section-movies').style.display=movies.length?'':'none';
-  $('fav-empty').classList.toggle('hidden',favs.length>0);
+  // Favorites is integrated as a status-tab in the list view.
+  if (currentView === 'list') renderListView();
 }
 
 // ══ BUILD CARD ════════════════════════════════════
@@ -651,8 +916,10 @@ async function searchAnime(page) {
         year:a.year||(a.aired?.from?new Date(a.aired.from).getFullYear():null),
         type:a.type,
         score:a.score,
-        trailer_id:a.trailer?.youtube_id||null,
+        trailer_id:extractTrailerId(a.trailer),
         season:a.season||null,
+        status_airing:a.status||null,
+        rating:a.rating||null,
       };
     });
     $('search-results').innerHTML=Object.values(_searchCache).map(a=>buildCard(a,'search')).join('');
@@ -763,70 +1030,135 @@ function renderDiscoverStats() {
   `;
 }
 
-function pickRecoFromPool(pool, genreName, el) {
+function shapeRecoItem(a) {
+  return {
+    mal_id: a.mal_id,
+    title: a.title_english||a.title,
+    image: a.images?.jpg?.image_url||'',
+    score: a.score,
+    episodes: a.episodes,
+    synopsis: a.synopsis,
+    genres: a.genres?.map(g=>g.name)||[],
+    themes: a.themes?.map(g=>g.name)||[],
+    year: a.year||(a.aired?.from?new Date(a.aired.from).getFullYear():null),
+    type: a.type,
+    trailer_id: extractTrailerId(a.trailer),
+    season: a.season||null,
+    status_airing: a.status||null,
+    rating: a.rating||null,
+  };
+}
+
+async function fetchGenrePage(genreId, page, minScore, mode) {
+  await rl();
+  // mode 'score' → top-rated, 'recent' → score-weighted recent (start_date filter)
+  const since = new Date(); since.setFullYear(since.getFullYear() - 4);
+  const isoDate = since.toISOString().slice(0,10);
+  const baseUrl = mode === 'recent'
+    ? `${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=25&page=${page}&start_date=${isoDate}`
+    : `${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=25&page=${page}`;
+  const r = await fetch(baseUrl);
+  const d = await r.json();
+  const items = (d.data||[]).filter(a => a.images?.jpg?.image_url).map(shapeRecoItem);
+  const hasNext = !!d.pagination?.has_next_page;
+  return { items, hasNext };
+}
+
+async function ensureRecoPool(genreId, minScore) {
+  if (!_recoPools[genreId]) _recoPools[genreId] = { items:[], page:1, done:false, mode:'score', switched:false };
+  const p = _recoPools[genreId];
+  // Fetch up to 4 pages on first call, then incrementally
+  while (!p.done && p.items.length < 60) {
+    try {
+      const { items, hasNext } = await fetchGenrePage(genreId, p.page, minScore, p.mode);
+      p.items = [...p.items, ...items];
+      p.page++;
+      if (!hasNext) {
+        if (!p.switched) {
+          // Switch from score mode to recent mode for fresh material
+          p.switched = true;
+          p.mode = 'recent';
+          p.page = 1;
+        } else {
+          p.done = true;
+          break;
+        }
+      }
+      // Stop early once we have enough
+      if (p.items.length >= 60) break;
+    } catch { p.done = true; break; }
+  }
+  return p;
+}
+
+function getAvailableFromPool(p) {
   const list = getList();
   const skipped = getSkipped();
-  const available = pool.filter(a => !list[a.mal_id] && !skipped[a.mal_id]);
-  if (!available.length) {
-    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
-    return;
-  }
-  // Shuffle and pick 4 — gives "real-time" variety on every render
-  const shuffled = [...available].sort(() => Math.random() - 0.5).slice(0, 4);
-  // Cache them in _searchCache so openModal can find them
-  shuffled.forEach(a => { _searchCache[a.mal_id] = a; });
-  renderRecoCards(el, shuffled, genreName);
+  return p.items.filter(a => !list[a.mal_id] && !skipped[a.mal_id]);
+}
+
+async function loadFallbackRecos() {
+  if (_recoFallback) return _recoFallback;
+  try {
+    await rl();
+    const r = await fetch(`${JIKAN}/top/anime?limit=25&filter=bypopularity`);
+    const d = await r.json();
+    _recoFallback = (d.data||[]).filter(a => a.images?.jpg?.image_url).map(shapeRecoItem);
+  } catch { _recoFallback = []; }
+  return _recoFallback;
 }
 
 async function renderDiscoverRecos() {
   const el = $('discover-recos'); if (!el) return;
   const top = getUserTopGenres(3);
-  if (!top.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
-  // Pick weighted-random genre from top 3 (rotates so user sees variety)
   const validGenres = top.filter(([g]) => GENRE_MAP[g]);
   if (!validGenres.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
-  const totalWeight = validGenres.reduce((s,[,c])=>s+c, 0);
-  let pick = Math.random() * totalWeight, chosen = validGenres[0];
-  for (const entry of validGenres) {
-    pick -= entry[1];
-    if (pick <= 0) { chosen = entry; break; }
-  }
-  const [genreName] = chosen;
-  const genreId = GENRE_MAP[genreName];
+
   const userAvg = getUserAvgScore();
   const minScore = userAvg !== null
     ? Math.min(8.5, Math.max(6.5, (userAvg/2) - 0.3))
     : 7;
-  const cacheKey = `${genreId}_${minScore.toFixed(1)}`;
 
-  if (_recoCache[cacheKey]) { pickRecoFromPool(_recoCache[cacheKey], genreName, el); return; }
-
-  el.innerHTML = `<div class="ds-loading"><div class="spinner-sm"></div></div>`;
-  try {
-    await rl();
-    const r = await fetch(`${JIKAN}/anime?genres=${genreId}&order_by=score&sort=desc&min_score=${minScore.toFixed(1)}&limit=25`);
-    const data = await r.json();
-    const pool = (data.data||[])
-      .filter(a => a.images?.jpg?.image_url)
-      .map(a => ({
-        mal_id: a.mal_id,
-        title: a.title_english||a.title,
-        image: a.images?.jpg?.image_url||'',
-        score: a.score,
-        episodes: a.episodes,
-        synopsis: a.synopsis,
-        genres: a.genres?.map(g=>g.name)||[],
-        themes: a.themes?.map(g=>g.name)||[],
-        year: a.year||null,
-        type: a.type,
-        trailer_id: a.trailer?.youtube_id||null,
-        season: a.season||null,
-      }));
-    _recoCache[cacheKey] = pool;
-    pickRecoFromPool(pool, genreName, el);
-  } catch {
-    el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`;
+  // Weighted-random pick of primary genre (rotates among top 3)
+  const totalWeight = validGenres.reduce((s,[,c])=>s+c, 0);
+  let pickW = Math.random() * totalWeight, primaryIdx = 0;
+  for (let i=0; i<validGenres.length; i++) {
+    pickW -= validGenres[i][1];
+    if (pickW <= 0) { primaryIdx = i; break; }
   }
+  // Reorder: primary first, then others (so we fall back through user's top genres)
+  const order = [primaryIdx, ...validGenres.map((_,i)=>i).filter(i=>i!==primaryIdx)];
+
+  // Show loading only on first build
+  if (!el.children.length) {
+    el.innerHTML = `<div class="ds-loading"><div class="spinner-sm"></div></div>`;
+  }
+
+  // Try each top genre in order until one yields ≥1 available item
+  let chosenName = null, chosenAvail = [];
+  for (const idx of order) {
+    const [name] = validGenres[idx];
+    const id = GENRE_MAP[name];
+    const pool = await ensureRecoPool(id, minScore);
+    const avail = getAvailableFromPool(pool);
+    if (avail.length) { chosenName = name; chosenAvail = avail; break; }
+    // Pool exhausted for this genre — try next one
+  }
+
+  // Final fallback: most-popular anime overall (excluding list + skipped)
+  if (!chosenAvail.length) {
+    const fallback = await loadFallbackRecos();
+    const list = getList(), skipped = getSkipped();
+    chosenAvail = fallback.filter(a => !list[a.mal_id] && !skipped[a.mal_id]);
+    chosenName = currentLang === 'fr' ? 'Populaires' : 'Popular';
+  }
+
+  if (!chosenAvail.length) { el.innerHTML = `<div class="ds-empty">${t('no_recos')}</div>`; return; }
+
+  // Shuffle and pick 4
+  const shuffled = [...chosenAvail].sort(() => Math.random() - 0.5).slice(0, 4);
+  shuffled.forEach(a => { _searchCache[a.mal_id] = a; });
+  renderRecoCards(el, shuffled, chosenName);
 }
 
 function renderRecoCards(el, list, genreName) {
@@ -874,9 +1206,11 @@ async function initDiscover() {
       year:a.year||(a.aired?.from?new Date(a.aired.from).getFullYear():null),
       type:a.type,
       score:a.score,
-      trailer_id:a.trailer?.youtube_id||null,
+      trailer_id:extractTrailerId(a.trailer),
       season:a.season||null,
       season_year:a.year||null,
+      status_airing:a.status||null,
+      rating:a.rating||null,
     }))];
     $('discover-loading').classList.add('hidden');
     $('discover-card').style.display='';
@@ -916,6 +1250,12 @@ function showDiscoverCard() {
   // Meta: score /20, season, episodes, type
   const meta=[];
   if (a.type) meta.push(`<span class="dc-meta-tag ${isMovie(a)?'tag-movie':'tag-series'}">${isMovie(a)?'🎬 Film':'📺 Série'}</span>`);
+  // Status airing
+  const dcStatusInfo = getStatusInfo(a.status_airing);
+  if (dcStatusInfo) meta.push(`<span class="dc-meta-tag status-tag-${dcStatusInfo.key}"><span class="status-dot"></span>${dcStatusInfo[currentLang==='en'?'labelEn':'labelFr']}</span>`);
+  // Audience rating
+  const dcRatingInfo = getRatingInfo(a.rating);
+  if (dcRatingInfo) meta.push(`<span class="dc-meta-tag rating-tag rating-${dcRatingInfo.tier}">${dcRatingInfo[currentLang==='en'?'labelEn':'labelFr']}</span>`);
   if (a.score) {
     const raw = Number(a.score)||0;
     const score20 = Math.min(20, Math.max(0, raw <= 10 ? raw*2 : raw)).toFixed(1);
@@ -926,15 +1266,50 @@ function showDiscoverCard() {
   if (a.episodes) meta.push(`<span class="dc-meta-tag">📺 ${a.episodes} ${t('eps_label')}</span>`);
   $('dc-meta').innerHTML=meta.join('');
 
-  // Trailer button
-  const trailerEl=$('dc-trailer');
-  if (trailerEl) {
-    if (a.trailer_id) {
-      trailerEl.innerHTML=`<a class="trailer-btn" href="https://www.youtube.com/watch?v=${esc(a.trailer_id)}" target="_blank" rel="noopener">▶ ${t('watch_trailer')}</a>`;
-    } else {
-      trailerEl.innerHTML=`<span class="trailer-btn trailer-none">${t('no_trailer')}</span>`;
-    }
+  // Trailer is now in the right side panel
+  renderDiscoverTrailer(a);
+}
+
+function renderDiscoverTrailer(a) {
+  const el = $('discover-trailer');
+  const subEl = $('dc-trailer-sub');
+  if (!el) return;
+  if (a && a.trailer_id) {
+    if (subEl) subEl.textContent = a.title || '';
+    const tid = esc(a.trailer_id);
+    const safeTitle = esc(a.title || 'Trailer');
+    el.innerHTML = `
+      <div class="trailer-embed-wrap" id="trailer-embed-wrap" data-tid="${tid}">
+        <img class="trailer-thumb"
+             src="https://i.ytimg.com/vi/${tid}/maxresdefault.jpg"
+             onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${tid}/hqdefault.jpg'"
+             alt="${safeTitle}" loading="lazy"/>
+        <button class="trailer-play-btn" type="button" onclick="playTrailerEmbed('${tid}', this)" aria-label="${t('play_trailer')}">
+          <svg viewBox="0 0 68 48" aria-hidden="true">
+            <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74 0.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"/>
+            <path d="M45 24 27 14v20z" fill="#fff"/>
+          </svg>
+        </button>
+      </div>
+      <a class="trailer-yt-link" href="https://www.youtube.com/watch?v=${tid}" target="_blank" rel="noopener">↗ ${t('watch_on_yt')}</a>
+    `;
+  } else {
+    if (subEl) subEl.textContent = '';
+    el.innerHTML = `<div class="trailer-empty">
+      <div class="trailer-empty-icon">🎬</div>
+      <div>${t('no_trailer_panel')}</div>
+    </div>`;
   }
+}
+
+function playTrailerEmbed(tid, btn) {
+  const wrap = document.getElementById('trailer-embed-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `<iframe class="trailer-embed"
+    src="https://www.youtube-nocookie.com/embed/${esc(tid)}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen frameborder="0"
+    title="Trailer"></iframe>`;
 }
 
 function discoverAction(action) {
@@ -952,6 +1327,7 @@ function discoverAction(action) {
       completed:`✓ ${t('done')}`
     };
     showToast(labels[action]);
+    if (action==='completed') checkBadgeUnlock();
   }
   discoverIndex++;
   const card=$('discover-card');
@@ -990,8 +1366,10 @@ async function openModal(malId, source) {
         year:d.year||(d.aired?.from?new Date(d.aired.from).getFullYear():null),
         type:d.type,
         score:d.score,
-        trailer_id:d.trailer?.youtube_id||null,
+        trailer_id:extractTrailerId(d.trailer),
         season:d.season||null,
+        status_airing:d.status||null,
+        rating:d.rating||null,
         status:null, currentEp:0, scores:{}, favorite:false
       };
     } catch { $('modal-content').innerHTML='<p style="padding:20px">Impossible de charger.</p>'; return; }
@@ -1001,6 +1379,40 @@ async function openModal(malId, source) {
   _modalTab = 'details';
   renderModal(malId);
   $('modal-overlay').classList.remove('hidden');
+  // Backfill missing fields (status_airing, rating) for old entries — re-renders modal once data arrives
+  backfillAnimeMeta(malId);
+}
+
+async function backfillAnimeMeta(malId) {
+  if (!_modal || _modal.mal_id !== malId) return;
+  if (_modal.status_airing && _modal.rating) return; // nothing missing
+  try {
+    await rl();
+    const d = (await (await fetch(`${JIKAN}/anime/${malId}`)).json()).data;
+    if (!d) return;
+    // Fill any missing meta fields
+    const patch = {
+      status_airing: _modal.status_airing || d.status || null,
+      rating:        _modal.rating        || d.rating || null,
+      season:        _modal.season        || d.season || null,
+      year:          _modal.year          || d.year || (d.aired?.from?new Date(d.aired.from).getFullYear():null),
+      trailer_id:    _modal.trailer_id    || extractTrailerId(d.trailer),
+      genres:        (_modal.genres && _modal.genres.length) ? _modal.genres : (d.genres?.map(g=>g.name)||[]),
+      themes:        (_modal.themes && _modal.themes.length) ? _modal.themes : (d.themes?.map(g=>g.name)||[]),
+      demographics:  (_modal.demographics && _modal.demographics.length) ? _modal.demographics : (d.demographics?.map(g=>g.name)||[]),
+    };
+    // Persist into list if anime is tracked
+    const list = getList();
+    if (list[malId]) {
+      Object.assign(list[malId], patch);
+      saveList(list);
+    }
+    // Update _modal and re-render if still open on same anime
+    if (_modal && _modal.mal_id === malId) {
+      Object.assign(_modal, patch);
+      renderModal(malId);
+    }
+  } catch {}
 }
 
 function renderModal(malId) {
@@ -1021,6 +1433,10 @@ function renderModal(malId) {
   const mal20  = Math.min(20, Math.max(0, malRaw <= 10 ? malRaw*2 : malRaw)).toFixed(1);
   const scoreTag = malRaw ? `<span class="modal-meta-tag dc-score" title="${t('score_label')}">★ MAL ${mal20}/20</span>` : '';
   const seasonTag=(a.season&&a.year)?`<span class="modal-meta-tag">🗓 ${seasonLabel(a.season)} ${a.year}</span>`:'';
+  const statusInfo = getStatusInfo(a.status_airing);
+  const statusTag = statusInfo ? `<span class="modal-meta-tag status-tag-${statusInfo.key}"><span class="status-dot"></span>${statusInfo[currentLang==='en'?'labelEn':'labelFr']}</span>` : '';
+  const ratingInfo = getRatingInfo(a.rating);
+  const ratingTag = ratingInfo ? `<span class="modal-meta-tag rating-tag rating-${ratingInfo.tier}">${ratingInfo[currentLang==='en'?'labelEn':'labelFr']}</span>` : '';
 
   // Tags: genres + themes + demographics
   const allTags=[...(a.genres||[]),...(a.themes||[]),...(a.demographics||[])];
@@ -1100,7 +1516,7 @@ function renderModal(malId) {
       <div class="modal-poster"><img src="${esc(a.image)}" alt="${esc(a.title)}"/></div>
       <div class="modal-info">
         <div class="modal-title">${esc(a.title)}</div>
-        <div class="modal-meta">${typeTag}${yearTag}${epsTag}${scoreTag}${seasonTag}</div>
+        <div class="modal-meta">${typeTag}${statusTag}${ratingTag}${yearTag}${epsTag}${scoreTag}${seasonTag}</div>
         ${tagsHtml}
         ${trailerHtml}
         <p class="modal-synopsis" id="modal-synopsis">${esc(a.synopsis||t('no_synopsis'))}</p>
@@ -1109,6 +1525,7 @@ function renderModal(malId) {
     <div class="modal-tabs">
       <button class="m-tab ${_modalTab==='details'?'active':''}" onclick="switchModalTab('details')">${t('tab_details')}</button>
       <button class="m-tab ${_modalTab==='characters'?'active':''}" onclick="switchModalTab('characters')">${t('tab_characters')}</button>
+      <button class="m-tab ${_modalTab==='music'?'active':''}" onclick="switchModalTab('music')">${t('tab_music')}</button>
     </div>
     <div id="mtab-details" class="m-tab-content ${_modalTab==='details'?'active':''}">
       ${addBtn}${statusSec}${epSec}${ratingsSec}${removeBtn}
@@ -1116,22 +1533,30 @@ function renderModal(malId) {
     <div id="mtab-characters" class="m-tab-content ${_modalTab==='characters'?'active':''}">
       <div class="char-loading"><div class="spinner-sm"></div><span>${t('loading_chars')}</span></div>
     </div>
+    <div id="mtab-music" class="m-tab-content ${_modalTab==='music'?'active':''}">
+      <div class="char-loading"><div class="spinner-sm"></div><span>${t('loading_music')}</span></div>
+    </div>
   `;
   // Async translate synopsis if FR
   if (a.synopsis && currentLang==='fr') applySynopsisTranslation('modal-synopsis', malId, a.synopsis);
   // Initialize slider fills (WebKit gradient needs JS-driven CSS var)
   initSliderFills($('modal-content'));
-  // If characters tab open, render
+  // If a non-default tab is active, render its content
   if (_modalTab==='characters') renderCharactersTab(malId);
+  if (_modalTab==='music') renderMusicTab(malId);
 }
 
 // ══ MODAL TABS ════════════════════════════════════
+const TAB_KEYS = ['details', 'characters', 'music'];
 function switchModalTab(tab) {
   _modalTab = tab;
-  document.querySelectorAll('.m-tab').forEach((b,i) => b.classList.toggle('active', i === (tab==='details'?0:1)));
+  const idx = TAB_KEYS.indexOf(tab);
+  document.querySelectorAll('.m-tab').forEach((b,i) => b.classList.toggle('active', i === idx));
   $('mtab-details').classList.toggle('active', tab==='details');
   $('mtab-characters').classList.toggle('active', tab==='characters');
+  $('mtab-music').classList.toggle('active', tab==='music');
   if (tab==='characters' && _modal) renderCharactersTab(_modal.mal_id);
+  if (tab==='music' && _modal) renderMusicTab(_modal.mal_id);
 }
 
 // ══ CHARACTERS ════════════════════════════════════
@@ -1217,6 +1642,202 @@ function onCharSlide(charId, axisKey, val) {
   const v = parseFloat(val) || 0;
   const valEl = $(`cval-${charId}-${axisKey}`);
   if (valEl) valEl.textContent = v + '/20';
+}
+
+// ══ MUSIC / THEMES ═══════════════════════════════
+function parseTheme(raw, type, idx) {
+  if (!raw) return null;
+  // Format examples: '1: "Crossing Field" by LiSA (eps 1-14)'
+  //                  '"Crossing Field" by LiSA'
+  //                  'Crossing Field by LiSA (eps 1-14)'
+  const m = String(raw).match(/^(?:(\d+):\s*)?"?([^"]+?)"?(?:\s+by\s+([^(]+?))?(?:\s*\((.+?)\))?\s*$/);
+  return {
+    key: `${type}_${idx}`,
+    type,
+    index: m?.[1] || String(idx + 1),
+    title: (m?.[2] || raw).trim(),
+    artist: (m?.[3] || '').trim(),
+    eps: (m?.[4] || '').trim(),
+    raw: String(raw),
+  };
+}
+
+async function loadThemes(malId) {
+  if (_themesCache[malId]) return _themesCache[malId];
+  try {
+    await rl();
+    const r = await fetch(`${JIKAN}/anime/${malId}/themes`);
+    const d = await r.json();
+    const data = d.data || {};
+    _themesCache[malId] = {
+      openings: (data.openings || []).map((s, i) => parseTheme(s, 'op', i)).filter(Boolean),
+      endings:  (data.endings  || []).map((s, i) => parseTheme(s, 'ed', i)).filter(Boolean),
+    };
+    return _themesCache[malId];
+  } catch {
+    return { openings: [], endings: [] };
+  }
+}
+
+function ytSearchUrl(animeTitle, theme) {
+  const q = `${animeTitle} ${theme.title} ${theme.artist}`.replace(/\s+/g, ' ').trim();
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+
+async function renderMusicTab(malId) {
+  const el = $('mtab-music');
+  if (!el) return;
+  el.innerHTML = `<div class="char-loading"><div class="spinner-sm"></div><span>${t('loading_music')}</span></div>`;
+  const themes = await loadThemes(malId);
+  if (!_modal || _modal.mal_id !== malId) return;
+  const total = themes.openings.length + themes.endings.length;
+  if (!total) {
+    el.innerHTML = `<div class="char-empty">${t('no_themes')}</div>`;
+    return;
+  }
+  const list = getList();
+  const isCompleted = list[malId]?.status === 'completed';
+  const musicScores = list[malId]?.musicScores || {};
+  const ratedVals = Object.values(musicScores).filter(v => v != null);
+  const musicGlobal = ratedVals.length ? Math.round((ratedVals.reduce((a,b)=>a+b,0)/ratedVals.length)*10)/10 : null;
+
+  const animeTitle = _modal.title || '';
+
+  el.innerHTML = `
+    <div id="music-global-wrap">${musicGlobal !== null ? `<div class="music-global">🎵 ${t('music_global')} : <strong id="music-global-val">${musicGlobal}/20</strong></div>` : ''}</div>
+    ${themes.openings.length ? `<div class="music-section">
+      <div class="music-section-title"><span class="ms-bullet">▶</span>${t('openings')}</div>
+      <div class="music-list">${themes.openings.map(th => buildThemeRow(th, animeTitle, musicScores[th.key], isCompleted)).join('')}</div>
+    </div>` : ''}
+    ${themes.endings.length ? `<div class="music-section">
+      <div class="music-section-title"><span class="ms-bullet">⏹</span>${t('endings')}</div>
+      <div class="music-list">${themes.endings.map(th => buildThemeRow(th, animeTitle, musicScores[th.key], isCompleted)).join('')}</div>
+    </div>` : ''}
+  `;
+  initSliderFills(el);
+}
+
+function getMusicReaction(malId, themeKey) {
+  const list = getList();
+  return list[malId]?.musicReactions?.[themeKey] || { reaction:null, favorite:false };
+}
+
+function buildThemeRow(th, animeTitle, val, canRate) {
+  const v = val != null ? val : 0;
+  const valDisplay = val != null ? `${v}/20` : '—/20';
+  const malId = _modal?.mal_id;
+  const r = malId ? getMusicReaction(malId, th.key) : { reaction:null, favorite:false };
+  return `<div class="music-row" id="music-row-${th.key}">
+    <div class="music-info">
+      <div class="music-title-line">
+        <span class="music-idx">#${esc(th.index)}</span>
+        <span class="music-title">${esc(th.title)}</span>
+      </div>
+      ${th.artist ? `<div class="music-artist">${esc(th.artist)}</div>` : ''}
+      ${th.eps ? `<div class="music-eps">${esc(th.eps)}</div>` : ''}
+    </div>
+    <a class="music-play-btn" href="${ytSearchUrl(animeTitle, th)}" target="_blank" rel="noopener" title="${t('listen_on_yt')}" aria-label="${t('listen_on_yt')}">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+    </a>
+    <div class="music-reactions" id="music-react-${th.key}">
+      <button class="music-react-btn ${r.reaction==='like'?'active-like':''}" type="button" onclick="toggleMusicReaction('${th.key}','like','${esc(th.type)}')" title="${t('music_like')}" aria-label="${t('music_like')}">👍</button>
+      <button class="music-react-btn ${r.reaction==='dislike'?'active-dislike':''}" type="button" onclick="toggleMusicReaction('${th.key}','dislike','${esc(th.type)}')" title="${t('music_dislike')}" aria-label="${t('music_dislike')}">👎</button>
+      <button class="music-react-btn ${r.favorite?'active-fav':''}" type="button" onclick="toggleMusicFavorite('${th.key}','${esc(th.type)}')" title="${t('music_favorite')}" aria-label="${t('music_favorite')}">⭐</button>
+    </div>
+    ${canRate ? `<div class="music-rating-row">
+      <input type="range" class="rating-slider music-slider" min="0" max="20" step="0.5" value="${v}"
+             oninput="updateSliderFill(this); onMusicSlide('${th.key}', this.value)"
+             onchange="setMusicScore('${th.key}', this.value)"/>
+      <span class="music-val" id="mval-${th.key}">${valDisplay}</span>
+    </div>` : ''}
+  </div>`;
+}
+
+function _findThemeMeta(malId, themeKey) {
+  const themes = _themesCache[malId];
+  if (!themes) return null;
+  return [...(themes.openings||[]), ...(themes.endings||[])].find(t => t.key === themeKey) || null;
+}
+
+function _ensureReactionEntry(malId, themeKey) {
+  const list = getList();
+  if (!list[malId]) return null;
+  if (!list[malId].musicReactions) list[malId].musicReactions = {};
+  if (!list[malId].musicReactions[themeKey]) {
+    list[malId].musicReactions[themeKey] = { reaction:null, favorite:false };
+  }
+  // Snapshot metadata so Top 10 picker can render without re-fetching themes
+  const th = _findThemeMeta(malId, themeKey);
+  if (th) {
+    const e = list[malId].musicReactions[themeKey];
+    e.title  = th.title;
+    e.artist = th.artist;
+    e.eps    = th.eps;
+    e.type   = th.type;
+    e.index  = th.index;
+  }
+  return list;
+}
+
+function toggleMusicReaction(themeKey, kind /* 'like'|'dislike' */, themeType) {
+  const malId = _modal?.mal_id;
+  if (!malId) return;
+  const list = _ensureReactionEntry(malId, themeKey);
+  if (!list) return;
+  const entry = list[malId].musicReactions[themeKey];
+  entry.reaction = entry.reaction === kind ? null : kind;
+  saveList(list);
+  const wrap = document.getElementById(`music-react-${themeKey}`);
+  if (wrap) {
+    const btns = wrap.querySelectorAll('.music-react-btn');
+    btns[0]?.classList.toggle('active-like', entry.reaction === 'like');
+    btns[1]?.classList.toggle('active-dislike', entry.reaction === 'dislike');
+  }
+}
+
+function toggleMusicFavorite(themeKey, themeType) {
+  const malId = _modal?.mal_id;
+  if (!malId) return;
+  const list = _ensureReactionEntry(malId, themeKey);
+  if (!list) return;
+  const entry = list[malId].musicReactions[themeKey];
+  entry.favorite = !entry.favorite;
+  saveList(list);
+  const wrap = document.getElementById(`music-react-${themeKey}`);
+  const favBtn = wrap?.querySelectorAll('.music-react-btn')[2];
+  if (favBtn) favBtn.classList.toggle('active-fav', entry.favorite);
+  if (entry.favorite) showToast(`⭐ ${t('music_favorite')}`);
+}
+
+function onMusicSlide(key, val) {
+  const v = parseFloat(val) || 0;
+  const el = $(`mval-${key}`);
+  if (el) el.textContent = v + '/20';
+}
+
+function setMusicScore(key, val) {
+  const malId = _modal?.mal_id;
+  if (!malId) return;
+  const list = getList();
+  if (!list[malId]) return;
+  if (!list[malId].musicScores) list[malId].musicScores = {};
+  let score = Math.max(0, Math.min(20, parseFloat(val)||0));
+  score = Math.round(score*2)/2;
+  list[malId].musicScores[key] = score;
+  saveList(list);
+  const el = $(`mval-${key}`);
+  if (el) el.textContent = score + '/20';
+  // recompute and update global music score
+  const ratedVals = Object.values(list[malId].musicScores).filter(v => v != null);
+  const musicGlobal = ratedVals.length ? Math.round((ratedVals.reduce((a,b)=>a+b,0)/ratedVals.length)*10)/10 : null;
+  const wrap = $('music-global-wrap');
+  if (wrap) {
+    if (musicGlobal !== null) {
+      const valEl = $('music-global-val');
+      if (valEl) valEl.textContent = `${musicGlobal}/20`;
+      else wrap.innerHTML = `<div class="music-global">🎵 ${t('music_global')} : <strong id="music-global-val">${musicGlobal}/20</strong></div>`;
+    }
+  }
 }
 
 function setCharScore(charId, axisKey, val) {
@@ -1313,10 +1934,12 @@ function addToList(status) {
   renderModal(a.mal_id);
   if (currentView==='list') renderListView();
   refreshSearchCards();
+  if (status==='completed') checkBadgeUnlock();
 }
 
 function setStatus(status) {
   const list=getList(), id=_modal.mal_id; if (!list[id]) return;
+  const wasCompleted = list[id].status === 'completed';
   list[id].status=status;
   if (status==='completed'&&list[id].episodes) list[id].currentEp=list[id].episodes;
   saveList(list); updateCounts();
@@ -1325,6 +1948,7 @@ function setStatus(status) {
   if (currentView==='list') renderListView();
   if (currentView==='favorites') renderFavorites();
   showToast(`${t('status')}: ${statusLbl(status)}`);
+  if (status==='completed' && !wasCompleted) checkBadgeUnlock();
 }
 
 function changeEp(d) {
@@ -1434,13 +2058,44 @@ function renderProfile() {
           </div>`).join('')}
       </div>
     </div>`:'';
+  // Badge progression
+  const badge = getUserBadge(completed);
+  const nextBadge = BADGES.find(b => b.min > completed);
+  const progressPct = nextBadge
+    ? Math.min(100, Math.round(((completed - badge.min) / (nextBadge.min - badge.min)) * 100))
+    : 100;
+  const progressLabel = nextBadge
+    ? `${completed}/${nextBadge.min} → ${badgeLabel(nextBadge)}`
+    : (currentLang === 'fr' ? 'Niveau maximum atteint !' : 'Max level reached!');
+
   $('profile-content').innerHTML=`
     <div class="profile-hero">
       <div class="profile-avatar-big">${ini}</div>
-      <div>
+      <div class="profile-hero-info">
         <div class="profile-name">${esc(currentUser)}</div>
         <div class="profile-joined">${joinedStr?`${t('member_since')} ${joinedStr}`:''}${favGenre?` · ❤️ ${favGenre}`:''}</div>
+        <div class="profile-badge" style="--badge-color:${badge.color}">
+          <span class="badge-emoji">${badge.emoji}</span>
+          <span class="badge-label">${badgeLabel(badge)}</span>
+        </div>
       </div>
+    </div>
+    <div class="badge-progress">
+      <div class="badge-progress-head">
+        <span class="badge-progress-current"><span style="font-size:14px">${badge.emoji}</span> ${badgeLabel(badge)}</span>
+        <span class="badge-progress-meta">${progressLabel}</span>
+      </div>
+      <div class="badge-progress-bar"><div class="badge-progress-fill" style="width:${progressPct}%;background:${nextBadge?`linear-gradient(90deg,${badge.color},${nextBadge.color})`:badge.color}"></div></div>
+      <div class="badge-tiers">
+        ${BADGES.map(b => `
+          <div class="badge-tier ${completed >= b.min ? 'unlocked' : ''} ${b.key === badge.key ? 'current' : ''}" style="--tier-color:${b.color}">
+            <span class="badge-tier-emoji">${b.emoji}</span>
+            <span class="badge-tier-name">${badgeLabel(b)}</span>
+            <span class="badge-tier-range">${b.max === Infinity ? `${b.min}+` : `${b.min}-${b.max}`}</span>
+          </div>
+        `).join('')}
+      </div>
+      <button class="badge-preview-btn" onclick="previewBadgeAnimation()">✨ ${t('test_animation')}</button>
     </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-label">${t('total')}</div></div>
@@ -1458,13 +2113,17 @@ function renderProfile() {
 function switchTop10Type(type) {
   currentTop10Type=type;
   document.querySelectorAll('.t10-toggle').forEach(b=>b.classList.toggle('active',b.dataset.top===type));
-  $('top10-series-panel').dataset.hidden=type!=='series'?'true':'false';
-  $('top10-movies-panel').dataset.hidden=type!=='movies'?'true':'false';
+  ['series','movies','openings','endings'].forEach(k => {
+    const p = $(`top10-${k}-panel`);
+    if (p) p.dataset.hidden = (k !== type) ? 'true' : 'false';
+  });
 }
 
 function renderTop10() {
   renderTop10Panel('series');
   renderTop10Panel('movies');
+  renderTop10MusicPanel('openings');
+  renderTop10MusicPanel('endings');
 }
 
 function renderTop10Panel(type) {
@@ -1549,8 +2208,16 @@ function removeTop10(malId, type) {
 
 // ── DRAG & DROP ───────────────────────────────────
 let _dsrc=null, _dtype=null;
+function _dataIdOf(arrItem) {
+  return (typeof arrItem === 'object' && arrItem !== null) ? String(arrItem.id) : String(arrItem);
+}
+function _findIdxInArr(arr, idStr) {
+  return arr.findIndex(item => _dataIdOf(item) === String(idStr));
+}
+function _isMusicTopType(type) { return type === 'openings' || type === 'endings'; }
+
 function onDS(e) {
-  _dsrc=Number(e.currentTarget.dataset.id);
+  _dsrc=String(e.currentTarget.dataset.id);
   _dtype=e.currentTarget.dataset.type;
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed='move';
@@ -1563,21 +2230,143 @@ function onDE(e) {
 function onDO(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect='move';
-  if (Number(e.currentTarget.dataset.id)!==_dsrc) e.currentTarget.classList.add('drag-over');
+  if (String(e.currentTarget.dataset.id)!==_dsrc) e.currentTarget.classList.add('drag-over');
 }
 function onDL(e) { e.currentTarget.classList.remove('drag-over'); }
 function onDrop(e) {
   e.preventDefault();
-  const tid=Number(e.currentTarget.dataset.id), type=_dtype;
+  const tid=String(e.currentTarget.dataset.id), type=_dtype;
   e.currentTarget.classList.remove('drag-over');
   if (!_dsrc||_dsrc===tid||!type) return;
   const t10=getTop10();
-  const arr=t10[type].map(Number);
-  const si=arr.indexOf(_dsrc), di=arr.indexOf(tid);
+  const arr=t10[type]||[];
+  const si=_findIdxInArr(arr, _dsrc), di=_findIdxInArr(arr, tid);
   if (si===-1||di===-1) return;
-  arr.splice(si,1); arr.splice(di,0,_dsrc);
+  const moved = arr[si];
+  arr.splice(si,1); arr.splice(di,0,moved);
   t10[type]=arr; saveTop10(t10); _dsrc=null;
-  renderTop10Panel(type);
+  if (_isMusicTopType(type)) renderTop10MusicPanel(type);
+  else renderTop10Panel(type);
+}
+
+// ── TOP 10 — MUSIC PANEL (Openings / Endings) ──
+function _buildMusicEntry(malId, themeKey, animeMeta, r) {
+  return {
+    id: `${malId}_${themeKey}`,
+    malId: Number(malId),
+    themeKey,
+    title:  r.title  || themeKey,
+    artist: r.artist || '',
+    eps:    r.eps    || '',
+    type:   r.type,
+    animeTitle: animeMeta.title || '',
+    animeImage: animeMeta.image || '',
+  };
+}
+
+function renderTop10MusicPanel(panelType) {
+  // panelType: 'openings' | 'endings'
+  const themeType = panelType === 'openings' ? 'op' : 'ed';
+  const t10 = getTop10();
+  const userList = getList();
+  const ranked = (t10[panelType] || []).filter(e => e && typeof e === 'object' && e.id);
+
+  // Build picker pool: all favorited tracks of matching type, not already ranked
+  const rankedIds = new Set(ranked.map(e => e.id));
+  const pool = [];
+  for (const malId in userList) {
+    const animeMeta = userList[malId];
+    const reactions = animeMeta.musicReactions || {};
+    for (const themeKey in reactions) {
+      const r = reactions[themeKey];
+      if (!r || !r.favorite || r.type !== themeType) continue;
+      const id = `${malId}_${themeKey}`;
+      if (rankedIds.has(id)) continue;
+      pool.push(_buildMusicEntry(malId, themeKey, animeMeta, r));
+    }
+  }
+
+  const listEl       = $(`top10-list-${panelType}`);
+  const emptyEl      = $(`top10-empty-${panelType}`);
+  const pickerEl     = $(`top10-picker-${panelType}`);
+  const pickerEmptyEl= $(`top10-picker-empty-${panelType}`);
+  if (!listEl) return;
+
+  if (!ranked.length) {
+    listEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+  } else {
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = ranked.map((entry, i) => {
+      const rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+      const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${entry.animeTitle} ${entry.title} ${entry.artist}`.trim())}`;
+      return `<div class="top10-item music-t10-item" draggable="true" data-id="${esc(entry.id)}" data-type="${panelType}"
+          ondragstart="onDS(event)" ondragover="onDO(event)" ondrop="onDrop(event)" ondragleave="onDL(event)" ondragend="onDE(event)">
+        <div class="t10-rank ${rc}">${i+1}</div>
+        <img class="t10-thumb" src="${esc(entry.animeImage)}" alt="${esc(entry.animeTitle)}"/>
+        <div class="t10-info">
+          <div class="t10-title">${esc(entry.title)}</div>
+          <div class="t10-music-sub">${entry.artist?esc(entry.artist)+' · ':''}${esc(entry.animeTitle)}</div>
+        </div>
+        <a class="t10-yt-mini" href="${yt}" target="_blank" rel="noopener" title="${t('listen_on_yt')}" onclick="event.stopPropagation()" draggable="false">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        </a>
+        <span class="t10-drag">⠿</span>
+        <button class="t10-remove" onclick="removeMusicTop10('${esc(entry.id)}','${panelType}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  const maxFull = ranked.length >= 10;
+  if (!pool.length || maxFull) {
+    pickerEl.innerHTML = '';
+    pickerEmptyEl.textContent = maxFull
+      ? t(panelType==='openings'?'t10_full_op':'t10_full_ed')
+      : t(panelType==='openings'?'t10_op_picker_empty':'t10_ed_picker_empty');
+    pickerEmptyEl.classList.remove('hidden');
+  } else {
+    pickerEmptyEl.classList.add('hidden');
+    pickerEl.innerHTML = pool.map(entry => `
+      <div class="t10-pick-item">
+        <img class="t10-pick-thumb" src="${esc(entry.animeImage)}" alt="${esc(entry.animeTitle)}"/>
+        <div class="t10-pick-info">
+          <span class="t10-pick-name">${esc(entry.title)}</span>
+          <span class="t10-pick-sub">${esc(entry.animeTitle)}</span>
+        </div>
+        <button class="t10-pick-btn" onclick="addMusicTop10('${esc(entry.id)}','${panelType}')">+</button>
+      </div>
+    `).join('');
+  }
+}
+
+function addMusicTop10(entryId, panelType) {
+  // entryId format: `${malId}_${themeKey}` where themeKey is e.g. 'op_1' or 'ed_0'
+  // MAL IDs are pure digits, so split on the FIRST underscore only.
+  const firstUs = entryId.indexOf('_');
+  if (firstUs === -1) return;
+  const malIdStr = entryId.slice(0, firstUs);
+  const themeKey = entryId.slice(firstUs + 1);
+  const malId = Number(malIdStr);
+  const list = getList();
+  const animeMeta = list[malId];
+  const r = animeMeta?.musicReactions?.[themeKey];
+  if (!animeMeta || !r) return;
+  const entry = _buildMusicEntry(malId, themeKey, animeMeta, r);
+  const t10 = getTop10();
+  if (!t10[panelType]) t10[panelType] = [];
+  if (t10[panelType].length >= 10) return;
+  if (t10[panelType].find(e => e && e.id === entryId)) return;
+  t10[panelType].push(entry);
+  saveTop10(t10);
+  renderTop10MusicPanel(panelType);
+  showToast(`${t('added_top')} ${panelType==='openings'?t('top_op'):t('top_ed')} !`);
+}
+
+function removeMusicTop10(entryId, panelType) {
+  const t10 = getTop10();
+  t10[panelType] = (t10[panelType]||[]).filter(e => !(e && e.id === entryId));
+  saveTop10(t10);
+  renderTop10MusicPanel(panelType);
 }
 
 // ══ UTILS ═════════════════════════════════════════
