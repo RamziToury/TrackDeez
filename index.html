@@ -54,7 +54,8 @@
       <button class="btn-primary" onclick="handleLogin()" data-i18n="connect">Se connecter</button>
     </div>
     <div id="register-form" class="auth-form hidden">
-      <div class="form-group"><label data-i18n="username">Identifiant</label><input type="text" id="reg-username" placeholder="choisir un pseudo" autocomplete="off"/></div>
+      <div class="form-group"><label data-i18n="username">Identifiant</label><input type="text" id="reg-username" placeholder="identifiant_unique" autocomplete="off"/></div>
+      <div class="form-group"><label data-i18n="pseudo_label">Pseudo (nom affiché)</label><input type="text" id="reg-pseudo" placeholder="Comment veux-tu être appelé ?" autocomplete="off"/></div>
       <div class="form-group"><label data-i18n="password">Mot de passe</label><input type="password" id="reg-password" placeholder="••••••••"/></div>
       <div class="form-group"><label data-i18n="confirm">Confirmer</label><input type="password" id="reg-password2" placeholder="••••••••"/></div>
       <div id="reg-error" class="form-error hidden"></div>
@@ -91,6 +92,14 @@
       <button class="snav-btn snav-gold" data-view="top10">
         <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         <span class="snav-label" data-i18n="top10">Top 10</span>
+      </button>
+      <button class="snav-btn snav-cyan" data-view="achievements">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="achievements">Achievements</span>
+      </button>
+      <button class="snav-btn snav-donate" data-view="donation">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="donation">Don</span>
       </button>
     </nav>
     <div class="sidebar-bottom">
@@ -183,11 +192,26 @@
         <input type="text" id="search-input" class="search-input" placeholder="Naruto, Attack on Titan, Your Name…" data-i18n="search_ph"/>
         <button class="btn-search" onclick="searchAnime()" data-i18n="search_btn">Rechercher</button>
       </div>
-      <label class="search-filter-row">
-        <input type="checkbox" id="search-hide-added" onchange="toggleSearchHideAdded()"/>
-        <span class="check-box"></span>
-        <span data-i18n="hide_added">Masquer ceux déjà ajoutés</span>
-      </label>
+      <div class="search-filters-row">
+        <label class="search-filter-row">
+          <input type="checkbox" id="search-hide-added" onchange="toggleSearchHideAdded()"/>
+          <span class="check-box"></span>
+          <span data-i18n="hide_added">Masquer ceux déjà ajoutés</span>
+        </label>
+        <label class="search-filter-row">
+          <input type="checkbox" id="search-hide-nsfw" onchange="toggleSearchHideNsfw()"/>
+          <span class="check-box"></span>
+          <span data-i18n="hide_nsfw">Masquer le contenu sensible (Rx)</span>
+        </label>
+      </div>
+      <div class="demo-filters">
+        <span class="demo-label" data-i18n="demographics">Démographie</span>
+        <button class="genre-btn demo-btn" data-genre="27" data-i18n="shounen">Shōnen</button>
+        <button class="genre-btn demo-btn" data-genre="25" data-i18n="shoujo">Shōjo</button>
+        <button class="genre-btn demo-btn" data-genre="42" data-i18n="seinen">Seinen</button>
+        <button class="genre-btn demo-btn" data-genre="43" data-i18n="josei">Josei</button>
+        <button class="genre-btn demo-btn" data-genre="15" data-i18n="kids">Kids</button>
+      </div>
       <div class="genre-filters" id="genre-filters">
         <button class="genre-btn active" data-genre="" data-i18n="genres_all">Tous</button>
         <button class="genre-btn" data-genre="1">Action</button>
@@ -275,6 +299,10 @@
             <div class="ds-panel-sub" id="dc-trailer-sub"></div>
             <div id="discover-trailer" class="ds-trailer"></div>
           </div>
+          <div class="ds-panel">
+            <div class="ds-panel-title" data-i18n="tab_reviews">📰 Reviews</div>
+            <div id="discover-reviews" class="ds-reviews"></div>
+          </div>
         </aside>
       </div>
     </div>
@@ -344,6 +372,25 @@
       </div>
     </div>
 
+    <!-- ── ACHIEVEMENTS VIEW ── -->
+    <div id="view-achievements" class="view"></div>
+
+    <!-- ── DONATION VIEW ── -->
+    <div id="view-donation" class="view">
+      <div class="view-header"><h1 class="view-title" data-i18n="donate_title">Soutenir Track Deez</h1></div>
+      <div class="donation-wrap">
+        <div class="donation-card">
+          <div class="donation-icon">☕</div>
+          <p class="donation-msg" data-i18n="donate_msg">Track Deez est gratuit et open-source. Si l'app te plaît, tu peux soutenir le développement avec un petit don ☕</p>
+          <a class="donation-btn" href="https://www.paypal.me/RamziToury" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.5 11h7c1.66 0 3-1.34 3-3s-1.34-3-3-3h-9C4.67 5 4 5.67 4 6.5V18.5c0 .83.67 1.5 1.5 1.5h2c.83 0 1.5-.67 1.5-1.5V14h6c1.66 0 3-1.34 3-3"/></svg>
+            <span data-i18n="donate_btn">Faire un don via PayPal</span>
+          </a>
+          <p class="donation-thanks" data-i18n="donate_thanks">Merci pour ton soutien !</p>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -352,6 +399,19 @@
   <div class="modal modal-wide" id="profile-modal">
     <button class="modal-close" onclick="closeProfile()">✕</button>
     <div id="profile-content" class="modal-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ AVATAR PICKER ═══════════════ -->
+<div id="avatar-picker-overlay" class="modal-overlay hidden" onclick="closeAvatarPickerOutside(event)">
+  <div class="modal modal-wide" id="avatar-picker-modal">
+    <button class="modal-close" onclick="closeAvatarPicker()">✕</button>
+    <div class="modal-content">
+      <h2 class="ap-title" data-i18n="avatar_picker_title">Choisir une photo de profil</h2>
+      <p class="ap-sub" data-i18n="avatar_picker_sub">Personnages issus des animés ⭐ favoris</p>
+      <div id="avatar-picker-grid" class="avatar-picker-grid"></div>
+      <button class="ap-remove-btn" type="button" onclick="clearProfilePic()" data-i18n="avatar_remove">Retirer la photo</button>
+    </div>
   </div>
 </div>
 
