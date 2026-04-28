@@ -2,9 +2,9 @@
 
 # 🎌 Track Deez
 
-**Suis tes animés. Note tes personnages. Classe tes openings.**
+**Suis tes animés. Note tes personnages. Classe tes openings. Débloque tes titres.**
 
-Une application web autonome pour traquer tes animés, noter chaque critère qui compte (histoire, animation, OST, ambiance, character design, character development), classer tes morceaux préférés et célébrer ta progression de Néophyte à Encyclopédie.
+Une application web autonome pour traquer tes animés, noter chaque critère qui compte (histoire, animation, OST, ambiance, character design, character development), classer tes morceaux préférés, débloquer des **achievements** comme Hokage / Shinigami / Saiyan, et célébrer ta progression de Néophyte à Encyclopédie.
 
 [Issues](https://github.com/RamziToury/TrackDeez/issues) • [Pull Requests](https://github.com/RamziToury/TrackDeez/pulls)
 
@@ -22,12 +22,17 @@ Une application web autonome pour traquer tes animés, noter chaque critère qui
 
 ### 🔍 Recherche
 - Recherche par titre via l'API Jikan (MyAnimeList)
-- **15 filtres genre** (Action, Aventure, Comédie, Drame, Fantasy, Horror, Mystery, Romance, Sci-Fi, Slice of Life, Sports, Supernatural, Thriller, Mecha, Isekai)
+- **15 filtres genre** + **5 filtres démographie** (Shōnen, Shōjo, Seinen, Josei, Kids — IDs MAL : 27 / 25 / 42 / 43 / 15)
 - **Pagination cliquable** (jusqu'à 248 résultats par requête)
-- Filtre **« Masquer ceux déjà ajoutés »**
+- 2 cases à cocher : **« Masquer ceux déjà ajoutés »** + **« Masquer le contenu sensible (Rx) »**
 
 ### ✨ À Découvrir
-- Carte swipeable avec animation (skip / à voir / en cours / terminé)
+Layout 3 colonnes :
+- **Gauche** : Recommandations personnalisées + Légende rating
+- **Centre** : Carte swipeable (skip / à voir / en cours / terminé)
+- **Droite** : Trailer YouTube + Reviews
+
+Détails :
 - Persistence du « pas intéressé » pendant **30 jours**
 - **Recommandations qui ne s'épuisent jamais** :
   - Pondération par les 3 genres les plus regardés (terminés ×3, en cours ×2, à voir ×1)
@@ -35,47 +40,70 @@ Une application web autonome pour traquer tes animés, noter chaque critère qui
   - Bascule automatique en mode « récent » (filtre `start_date`) quand le top all-time est épuisé
   - Fallback sur les top genres secondaires
   - Fallback ultime sur les anime les plus populaires globalement
-- **Trailer YouTube embarqué** avec miniature + bouton play (et lien externe en fallback)
-- Légende visuelle des **ratings audience** (G → Rx)
+- **Trailer YouTube** : miniature toujours visible + bouton play (embed nocookie au clic) + lien externe garanti
+- **Reviews** : 2 avis compacts par anime, badges Spoiler/Préliminaire, click-to-reveal sur les spoilers
 
 ### 🏆 Top 10
 4 onglets indépendants avec **drag & drop** pour réordonner :
 - 📺 Séries
 - 🎬 Films
-- ▶️ **Openings** (depuis tes favoris)
-- ⏹️ **Endings** (depuis tes favoris)
+- ▶️ **Openings** (depuis tes ⭐ favoris dans l'onglet Musique)
+- ⏹️ **Endings** (depuis tes ⭐ favoris)
 
-Picker intelligent qui affiche uniquement les morceaux marqués ⭐ favori dans l'onglet Musique.
+### 🎯 Achievements
+Onglet dédié avec :
+- **Badge principal en grand** (Néophyte/Initié/Otaku/Encyclopédie) avec barre de progression vers le palier suivant
+- **16 succès thématiques** déblocables :
+
+| Achievement | Condition |
+|---|---|
+| ⚔️ **Warrior** | Terminer 20 shōnen |
+| 🛐 **Saint** | Terminer 20 seinen |
+| 🌸 **Magicienne** | Terminer 20 shōjo |
+| 🌹 **Femme fatale** | Terminer 20 josei |
+| 🧸 **Innocent** | Terminer 20 anime "kids" |
+| ☠️ **Pirate** | Atteindre l'épisode 500 de One Piece |
+| 🥷 **Ninja** | Terminer Naruto original (220 ép) |
+| 🍥 **Hokage** | Terminer Naruto Shippūden (500 ép) |
+| ⚰️ **Shinigami** | Terminer Bleach (366 ép, hors films & TYBW) |
+| 🐉 **Saiyan** | Terminer Dragon Ball Z (291 ép) |
+| 🎭 **No Name** | Terminer Monster (74 ép) |
+| ⏳ **Time Traveler** | Terminer Steins;Gate + Steins;Gate 0 |
+| 🎯 **Hunter** | Terminer Hunter x Hunter 2011 (148 ép) |
+| 🗡️ **Titan** | Terminer Attack on Titan saisons 1, 2 et 3 |
+| ⚗️ **Alchemist** | Terminer Fullmetal Alchemist Brotherhood |
+| 🧿 **Exorcist** | Terminer Jujutsu Kaisen S1 + S2 |
+
+Cards avec couleur signature, état grisé tant que verrouillé, barre de progression en temps réel.
 
 ### 🎬 Fiche d'animé (modale)
-3 onglets :
+4 onglets :
+
+#### 📰 Reviews
+- Endpoint Jikan `/anime/{id}/reviews?preliminary=true&spoilers=true`
+- Avatar utilisateur, score /10, date, badges Préliminaire / Spoiler
+- **Click-to-reveal** sur les spoilers (cover rayé rouge avec icône ⚠️)
+- Show more/less pour les longs avis
+- Lien externe vers la review complète sur MAL
 
 #### 📋 Détails
-- Poster + titre + meta tags : Type / Statut diffusion (🟢 en cours, ⚪ terminé, 🔵 prochainement, point pulsant) / Rating audience (G→Rx, code couleur 4 niveaux) / Année / Saison / Score MAL /20 / Épisodes
+- Poster + meta tags : Type / **Statut diffusion** (🟢 en cours avec point pulsant, ⚪ terminé, 🔵 prochainement) / **Rating audience** (G→Rx, code couleur 4 niveaux) / Année / Saison / Score MAL /20 / Épisodes
 - Tags **genres + thèmes + démographie** combinés avec bouton « voir tout »
-- Synopsis **auto-traduit en français** via Google Translate (fallback MyMemory → original anglais)
-- Sliders de notation **0–20 step 0.5** sur 6 critères (visibles si statut = Terminé) :
-  - 📖 Histoire
-  - 🎨 Animation
-  - 🎵 Musiques & OST
-  - ✏️ Character Design
-  - 🌱 Développement des persos
-  - 🌙 Ambiance
-- Calcul automatique de la **note globale** (moyenne des 6 critères)
-- ⭐ Bouton favori
+- Synopsis **auto-traduit en français** (Google Translate primaire, MyMemory fallback, original anglais en dernier recours)
+- Sliders de notation **0–20 step 0.5** sur 6 critères :
+  - 📖 Histoire / 🎨 Animation / 🎵 Musiques & OST / ✏️ Character Design / 🌱 Développement / 🌙 **Ambiance**
+- Note globale automatique (moyenne)
 
 #### 👥 Personnages
 - Top 8 personnages principaux fetché depuis Jikan
 - Notation **3 axes par personnage** : Character Design / Histoire perso / Développement
-- Note globale par personnage (moyenne des 3 axes)
 
 #### 🎵 Musique
-- Tous les openings et endings depuis l'endpoint `/anime/{id}/themes`
-- Chaque morceau : numéro / titre / artiste / épisodes
-- **Bouton play** qui ouvre une recherche YouTube ciblée (titre anime + titre morceau + artiste)
-- **Réactions** par track : 👍 Like / 👎 Dislike / ⭐ Favori
-- Notation **0–20 step 0.5** par track (si statut = Terminé)
-- **Note musique globale** = moyenne de tous les tracks notés
+- Tous les openings et endings via `/anime/{id}/themes`
+- **Bouton play** qui ouvre une recherche YouTube ciblée
+- **Réactions** par track : 👍 Like / 👎 Dislike / ⭐ Favori (le favori débloque l'ajout au Top 10 OPs/EDs)
+- Notation /20 par track (si statut Terminé)
+- Note musique globale automatique
 
 ### 🏅 Système de progression
 4 paliers basés sur le nombre d'animes terminés :
@@ -87,21 +115,18 @@ Picker intelligent qui affiche uniquement les morceaux marqués ⭐ favori dans 
 | 🔥 **Otaku** | 30 – 99 | Rose |
 | 📚 **Encyclopédie** | 100+ | Or |
 
-Animation **plein écran « FÉLICITATIONS ! »** au passage de palier :
-- Card qui pop avec rebond élastique
-- Halo coloré pulsant en arrière-plan
-- 80 confettis multicolores qui tombent
-- Rayons solaires en rotation
-- Light sweep diagonal
-- Bouton « Tester l'animation » dans le profil pour prévisualiser
+Animation **plein écran « FÉLICITATIONS ! »** au passage de palier : card pop-bounce, halo pulsant, 80 confettis multicolores, rayons solaires en rotation, light sweep, emoji bouncing.
 
 ### 👤 Profil
-- Avatar (initiales)
-- Date d'inscription
+- **Avatar cliquable** : ouvre un sélecteur permettant de choisir un personnage parmi les animés ⭐ favoris
+- **Pseudo** (nom affiché) distinct de l'**identifiant** (login)
+- **Podium 🏆** avec le top 3 séries (or/argent/bronze, image + nom, cliquable vers la fiche)
 - Stats : Total / Terminés / Taux de complétion / En cours / À voir / Favoris
 - **Top genres** avec barres de progression
-- Badge actuel + grille des 4 paliers
-- Barre de progression vers le palier suivant
+- Badge actuel + grille des 4 paliers + barre de progression vers le palier suivant
+
+### 💖 Don
+Onglet dédié pour soutenir le projet via PayPal (lien `paypal.me/RamziToury`).
 
 ### 🌐 Internationalisation
 - **Français / Anglais** avec switch dans la sidebar
@@ -109,10 +134,9 @@ Animation **plein écran « FÉLICITATIONS ! »** au passage de palier :
 - Préférence sauvegardée par utilisateur
 
 ### 🌌 Bonus
-- **Background starfield** animé en canvas (port vanilla d'un composant React, ~80 lignes)
-- Couleurs adaptées au thème (sombre par défaut, clair disponible)
-- Sidebar translucide avec backdrop-filter pour laisser passer les étoiles
-- Sidebar nav avec **flèche qui slide à l'hover** (style MenuVertical)
+- **Background starfield** animé en canvas (vanilla)
+- Sidebar nav avec **flèche qui slide à l'hover** (style MenuVertical, sans emojis)
+- Sidebar translucide avec backdrop-filter
 
 ---
 
@@ -123,7 +147,7 @@ Animation **plein écran « FÉLICITATIONS ! »** au passage de palier :
 - **HTML5** + **CSS3** (custom properties, grid, flexbox, animations, backdrop-filter)
 - **Vanilla JavaScript ES6+** (fetch API, localStorage, async/await)
 - **API Jikan v4** (https://api.jikan.moe) pour toutes les données MyAnimeList
-- **Google Translate** (endpoint `gtx`) + **MyMemory** en fallback pour les synopsis FR
+- **Google Translate** + **MyMemory** en fallback pour les synopsis FR
 - **YouTube** (embed iframe, search results, miniatures `i.ytimg.com`)
 - **Storage** : `localStorage` (pas de backend)
 - **Polices** : Bebas Neue (display) + Outfit (texte) via Google Fonts
@@ -132,17 +156,14 @@ Animation **plein écran « FÉLICITATIONS ! »** au passage de palier :
 
 ## 🚀 Démarrage
 
-Pas de build, pas de `npm install`. Trois fichiers, c'est tout.
-
 ```bash
 git clone https://github.com/RamziToury/TrackDeez.git
 cd TrackDeez
-# Ouvre index.html dans ton navigateur, ou avec un petit serveur local :
 python -m http.server 8000
-# puis http://localhost:8000
+# http://localhost:8000
 ```
 
-> ⚠️ Recommandé d'utiliser un serveur local plutôt qu'`open index.html` directement, certains navigateurs bloquent les requêtes `fetch` en `file://` selon la config CORS.
+> ⚠️ Recommandé d'utiliser un serveur local plutôt qu'`open index.html` directement, certains navigateurs bloquent les requêtes `fetch` en `file://`.
 
 ---
 
@@ -150,8 +171,8 @@ python -m http.server 8000
 
 ```
 trackdeez/
-├── index.html      # Structure DOM, modales, overlays, SVG defs (gradients logo)
-├── style.css       # Design system (CSS variables, thèmes), composants, animations
+├── index.html      # Structure DOM, modales, overlays, SVG defs
+├── style.css       # Design system, composants, animations
 ├── app.js          # Logique complète : auth, storage, API, render, drag&drop, i18n
 └── README.md       # ce fichier
 ```
@@ -160,53 +181,51 @@ trackdeez/
 
 | Section | Responsabilité |
 |---|---|
-| `getDB / saveDB / getList / saveList / getTop10 / saveTop10` | Wrapper localStorage par utilisateur |
-| `handleLogin / handleRegister / loginUser / handleLogout` | Auth basique (hash maison, multi-utilisateurs) |
+| `getDB / saveDB / getList / saveList / getTop10` | Wrapper localStorage par utilisateur |
+| `handleLogin / handleRegister / loginUser` | Auth basique (hash maison) avec username + pseudo séparés |
 | `applyLang / t()` | i18n FR/EN avec `T_DICT` |
-| `renderListView / renderTop10 / renderProfile / etc.` | Rendu des vues |
-| `searchAnime / initDiscover / loadCharacters / loadThemes` | Fetch Jikan rate-limité (`rl()` 420ms) |
+| `renderListView / renderTop10 / renderProfile / renderAchievements` | Rendu des vues |
+| `searchAnime / initDiscover / loadCharacters / loadThemes / loadReviews` | Fetch Jikan rate-limité (`rl()` 420ms) |
 | `getStatusInfo / getRatingInfo / extractTrailerId` | Helpers de parsing API |
 | `translateText / getTranslatedSynopsis` | Pipeline Google → MyMemory → original |
 | `Starfield` | Animation canvas plein écran |
-| `BADGES / getUserBadge / checkBadgeUnlock / showBadgeUnlock` | Système de progression |
+| `BADGES / getUserBadge / checkBadgeUnlock / showBadgeUnlock` | Système de paliers + animation FÉLICITATIONS |
+| `ACHIEVEMENTS / checkAchievement` | 16 succès thématiques (démographies, anime spécifiques, séries multi-saisons) |
 | `onDS / onDO / onDrop / onDE / onDL` | Drag & drop générique (primitives + objets) |
+| `openAvatarPicker / setProfilePic` | Sélecteur de photo de profil depuis perso d'animes favoris |
 
 ### Modèle de données utilisateur
 
 ```js
 db.users[username] = {
-  password,           // hash maison (à NE PAS utiliser en prod)
-  list: {             // Animes trackés
+  password,           // hash maison
+  pseudo,             // nom affiché (séparé du login)
+  profilePic,         // URL d'image de personnage
+  list: {
     [malId]: {
       mal_id, title, image, episodes, synopsis, genres, themes, demographics,
       year, type, score, trailer_id, season, status_airing, rating,
-      status,         // 'watching' | 'planToWatch' | 'completed'
-      currentEp,
-      scores: { story, animation, music, chardesign, chardev, ambiance },  // /20 step 0.5
-      favorite,
-      addedAt,
+      status, currentEp, favorite, addedAt,
+      scores: { story, animation, music, chardesign, chardev, ambiance },
       // Onglet Personnages
-      characters: [{ id, name, image }],          // top 8 main, fetched lazy
-      characterScores: {
-        [charId]: { charadesign, backstory, dev }
-      },
+      characters: [{ id, name, image }],
+      characterScores: { [charId]: { charadesign, backstory, dev } },
       // Onglet Musique
-      musicReactions: {
-        [themeKey]: { reaction:'like|dislike|null', favorite, title, artist, eps, type, index }
-      },
-      musicScores: { [themeKey]: number }          // /20 step 0.5
+      musicReactions: { [themeKey]: { reaction, favorite, title, artist, eps, type, index } },
+      musicScores: { [themeKey]: number }
     }
   },
   top10: {
-    series:   [malId, ...],                        // primitives
+    series:   [malId, ...],
     movies:   [malId, ...],
-    openings: [{ id, malId, themeKey, title, ... }],  // objets (snapshot)
+    openings: [{ id, malId, themeKey, title, ... }],
     endings:  [{ ... }]
   },
-  skipped: { [malId]: timestamp },                 // « pas intéressé » TTL 30j
+  skipped: { [malId]: timestamp },   // TTL 30j
   theme: 'dark' | 'light',
+  lang:  'fr' | 'en',
   joinedAt,
-  lastBadge                                        // pour détecter les progressions
+  lastBadge                          // pour détecter les progressions de palier
 }
 ```
 
@@ -218,8 +237,9 @@ db.users[username] = {
 |---|---|
 | `GET /anime?q=...&genres=...&page=...` | Recherche + Discover pool |
 | `GET /anime/{id}` | Backfill modale |
-| `GET /anime/{id}/characters` | Onglet Personnages |
+| `GET /anime/{id}/characters` | Onglet Personnages + Avatar picker |
 | `GET /anime/{id}/themes` | Onglet Musique (openings/endings) |
+| `GET /anime/{id}/reviews?preliminary=true&spoilers=true` | Onglet Reviews + panneau Discover |
 | `GET /top/anime?filter=bypopularity` | Fallback ultime des recommandations |
 | `GET https://translate.googleapis.com/translate_a/single` | Traduction primaire |
 | `GET https://api.mymemory.translated.net/get` | Traduction fallback |
@@ -240,7 +260,7 @@ Rate-limit Jikan respecté via `rl()` (420ms entre les requêtes).
 
 Gradient signature : `linear-gradient(135deg, #7c5cfc, #a47dff, #06d2e0)` — logo, sliders, boutons CTA.
 
-Polices : **Bebas Neue** (titres, view-titles, badges) + **Outfit** (texte courant).
+Polices : **Bebas Neue** (titres, badges) + **Outfit** (texte courant).
 
 Mode sombre par défaut, mode clair via toggle dans la sidebar.
 
@@ -265,6 +285,7 @@ Mode sombre par défaut, mode clair via toggle dans la sidebar.
 - [ ] Recommandations basées sur la similarité des notes (collaborative filtering)
 - [ ] Partage d'un Top 10 via lien public
 - [ ] Notifications de nouveaux épisodes pour les anime « en cours »
+- [ ] Plus d'achievements thématiques
 
 ---
 
