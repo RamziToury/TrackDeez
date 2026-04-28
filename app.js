@@ -322,6 +322,15 @@ const LANG = {
     locked: 'Verrouillé', unlocked: 'Débloqué',
     podium_title:'Podium des séries', no_top_yet:'Classe des séries dans ton Top 10 pour voir le podium ici.',
     hide_nsfw:'Masquer le contenu sensible (Rx)',
+    data_section:'Sauvegarde des données',
+    data_msg:'Migre tes données entre appareils ou fais une copie de sauvegarde.',
+    export_btn:'📤 Exporter mes données',
+    import_btn:'📥 Importer une sauvegarde',
+    import_link_auth:'📥 Importer une sauvegarde existante',
+    import_success:'Import réussi',
+    import_error:'Fichier invalide ou corrompu',
+    export_done:'Sauvegarde téléchargée',
+    confirm_import:'Importer écrasera les comptes existants portant le même identifiant. Continuer ?',
     // Sort & filters
     sort_by: 'Trier', sort_recent: 'Récent', sort_alpha: 'A → Z',
     sort_alpha_rev: 'Z → A', sort_score_desc: 'Note ↓', sort_score_asc: 'Note ↑',
@@ -441,6 +450,15 @@ const LANG = {
     your_tier: 'Your current tier', special_achievements: 'Special achievements',
     podium_title:'Series podium', no_top_yet:'Rank some series in your Top 10 to see the podium here.',
     hide_nsfw:'Hide sensitive content (Rx)',
+    data_section:'Data backup',
+    data_msg:'Migrate your data between devices or back it up.',
+    export_btn:'📤 Export my data',
+    import_btn:'📥 Import a backup',
+    import_link_auth:'📥 Import an existing backup',
+    import_success:'Import successful',
+    import_error:'Invalid or corrupt file',
+    export_done:'Backup downloaded',
+    confirm_import:'Importing will overwrite existing accounts with the same identifier. Continue?',
     locked: 'Locked', unlocked: 'Unlocked',
     // Sort & filters
     sort_by: 'Sort', sort_recent: 'Recent', sort_alpha: 'A → Z',
@@ -718,6 +736,73 @@ function handleLogout() {
   $('login-username').value = ''; $('login-password').value = '';
 }
 function showErr(el, m) { el.textContent = m; el.classList.remove('hidden'); }
+
+// ══ DATA EXPORT / IMPORT ═══════════════════════════
+function exportAllData() {
+  try {
+    const db = getDB();
+    const payload = {
+      app: 'TrackDeez',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      db: db,
+      translations: JSON.parse(localStorage.getItem('anitrack_translations') || '{}'),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    link.download = `trackdeez-backup-${date}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    showToast(`✓ ${t('export_done')}`);
+  } catch (err) {
+    showToast(`${t('import_error')} : ${err.message}`);
+  }
+}
+
+function triggerImport() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.style.display = 'none';
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    document.body.removeChild(input);
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!parsed || !parsed.db || !parsed.db.users || typeof parsed.db.users !== 'object') {
+        throw new Error('format');
+      }
+      const userCount = Object.keys(parsed.db.users).length;
+      if (!userCount) throw new Error('empty');
+      if (!confirm(t('confirm_import'))) return;
+      // Merge: imported users override on conflict
+      const currentDb = getDB();
+      const mergedUsers = { ...(currentDb.users || {}), ...parsed.db.users };
+      const newDb = { ...currentDb, users: mergedUsers, sessions: currentDb.sessions || {} };
+      saveDB(newDb);
+      // Merge translations cache
+      if (parsed.translations && typeof parsed.translations === 'object') {
+        const cur = JSON.parse(localStorage.getItem('anitrack_translations') || '{}');
+        Object.assign(cur, parsed.translations);
+        try { localStorage.setItem('anitrack_translations', JSON.stringify(cur)); } catch {}
+      }
+      showToast(`✓ ${t('import_success')} (${userCount})`);
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+      showToast(`${t('import_error')}`);
+      console.error('Import failed:', err);
+    }
+  });
+  document.body.appendChild(input);
+  input.click();
+}
 
 // ══ SYNOPSIS TRANSLATION ═══════════════════════════
 function getTransCache() {
@@ -2578,6 +2663,14 @@ function renderProfile() {
     </div>
     ${podiumHtml}
     ${genreChart}
+    <div class="profile-section data-section">
+      <div class="profile-section-title">💾 ${t('data_section')}</div>
+      <p class="data-msg">${t('data_msg')}</p>
+      <div class="data-actions">
+        <button class="data-btn data-btn-export" type="button" onclick="exportAllData()">${t('export_btn')}</button>
+        <button class="data-btn data-btn-import" type="button" onclick="triggerImport()">${t('import_btn')}</button>
+      </div>
+    </div>
   `;
 }
 
