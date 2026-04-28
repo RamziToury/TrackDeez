@@ -21,7 +21,7 @@ let _recoPools = {};
 let _recoFallback = null; // top-rated overall, lazy-loaded
 let listSortMode = 'recent';
 let searchHideAdded = false;
-let searchHideNsfw  = false;
+let searchHideNsfw = false;
 let _modalTab = 'details';
 let _charCache = {};
 let _themesCache = {};
@@ -46,25 +46,41 @@ function badgeLabel(b) { return currentLang === 'en' ? b.labelEn : b.labelFr; }
 
 // ── ACHIEVEMENTS (special milestones) ──────────────
 const ACHIEVEMENTS = [
-  // Demographic completions (20+ each)
-  { key: 'warrior', label: 'Warrior', emoji: '⚔️', color: '#ef4444', descFr: 'Termine 20 shōnen', descEn: 'Complete 20 shōnen anime', type: 'demoCount', demo: 'shounen', target: 20 },
-  { key: 'saint', label: 'Saint', emoji: '🛐', color: '#a78bfa', descFr: 'Termine 20 seinen', descEn: 'Complete 20 seinen anime', type: 'demoCount', demo: 'seinen', target: 20 },
-  { key: 'magicienne', label: 'Magicienne', emoji: '🌸', color: '#f472b6', descFr: 'Termine 20 shōjo', descEn: 'Complete 20 shōjo anime', type: 'demoCount', demo: 'shoujo', target: 20 },
-  { key: 'femfatale', label: 'Femme fatale', emoji: '🌹', color: '#dc2626', descFr: 'Termine 20 josei', descEn: 'Complete 20 josei anime', type: 'demoCount', demo: 'josei', target: 20 },
-  { key: 'innocent', label: 'Innocent', emoji: '🧸', color: '#22c67a', descFr: 'Termine 20 anime "kids"', descEn: 'Complete 20 kids anime', type: 'demoCount', demo: 'kids', target: 20 },
-  // Specific anime completions
-  { key: 'pirate', label: 'Pirate', emoji: '☠️', color: '#0891b2', descFr: 'Atteins l\'épisode 500 de One Piece', descEn: 'Reach episode 500 of One Piece', type: 'episodeCount', mal: 21, target: 500, animeName: 'One Piece' },
-  { key: 'ninja', label: 'Ninja', emoji: '🥷', color: '#fb923c', descFr: 'Termine Naruto original', descEn: 'Complete Naruto original', type: 'completed', mals: [20] },
-  { key: 'hokage', label: 'Hokage', emoji: '🍥', color: '#f59e0b', descFr: 'Termine Naruto Shippūden', descEn: 'Complete Naruto Shippūden', type: 'completed', mals: [1735] },
-  { key: 'shinigami', label: 'Shinigami', emoji: '⚰️', color: '#c20343ff', descFr: 'Termine Bleach', descEn: 'Complete Bleach', type: 'completed', mals: [269] },
-  { key: 'saiyan', label: 'Saiyan', emoji: '🐉', color: '#fbbf24', descFr: 'Termine Dragon Ball Z', descEn: 'Complete Dragon Ball Z', type: 'completed', mals: [813] },
-  { key: 'noname', label: 'No Name', emoji: '🎭', color: '#6b7280', descFr: 'Termine Monster', descEn: 'Complete Monster', type: 'completed', mals: [19] },
-  { key: 'timetrav', label: 'Time Traveler', emoji: '⏳', color: '#06d2e0', descFr: 'Termine Steins;Gate + Steins;Gate 0', descEn: 'Complete Steins;Gate + Steins;Gate 0', type: 'completed', mals: [9253, 30484] },
-  { key: 'hunter', label: 'Hunter', emoji: '🎯', color: '#16a34a', descFr: 'Termine Hunter x Hunter (2011)', descEn: 'Complete Hunter x Hunter (2011)', type: 'completed', mals: [11061] },
-  { key: 'titan', label: 'Titan', emoji: '🔰', color: '#794f01ff', descFr: 'Termine Attack on Titan saisons 1, 2 et 3', descEn: 'Complete Attack on Titan seasons 1, 2 and 3', type: 'completed', mals: [16498, 25777, 35760] },
-  { key: 'alchemist', label: 'Alchemist', emoji: '⚗️', color: '#facc15', descFr: 'Termine Fullmetal Alchemist Brotherhood', descEn: 'Complete Fullmetal Alchemist Brotherhood', type: 'completed', mals: [5114] },
-  { key: 'exorcist', label: 'Exorcist', emoji: '🧿', color: '#7c5cfc', descFr: 'Termine Jujutsu Kaisen S1 + S2', descEn: 'Complete Jujutsu Kaisen S1 + S2', type: 'completed', mals: [40748, 51009] },
+  // ═══ Demographic completions (20+ each) ═══
+  { key: 'warrior', labelFr: 'Guerrier', labelEn: 'Warrior', emoji: '⚔️', color: '#ef4444', descFr: 'Termine 20 shōnen', descEn: 'Complete 20 shōnen anime', type: 'demoCount', demo: 'shounen', target: 20 },
+  { key: 'saint', labelFr: 'Saint', labelEn: 'Saint', emoji: '🛐', color: '#a78bfa', descFr: 'Termine 20 seinen', descEn: 'Complete 20 seinen anime', type: 'demoCount', demo: 'seinen', target: 20 },
+  { key: 'magicienne', labelFr: 'Magicienne', labelEn: 'Magician', emoji: '🌸', color: '#f472b6', descFr: 'Termine 20 shōjo', descEn: 'Complete 20 shōjo anime', type: 'demoCount', demo: 'shoujo', target: 20 },
+  { key: 'femfatale', labelFr: 'Femme fatale', labelEn: 'Femme Fatale', emoji: '🌹', color: '#dc2626', descFr: 'Termine 20 josei', descEn: 'Complete 20 josei anime', type: 'demoCount', demo: 'josei', target: 20 },
+  { key: 'innocent', labelFr: 'Innocent', labelEn: 'Innocent', emoji: '🧸', color: '#22c67a', descFr: 'Termine 20 anime "kids"', descEn: 'Complete 20 kids anime', type: 'demoCount', demo: 'kids', target: 20 },
+  // ═══ Specific anime completions ═══
+  { key: 'pirate', labelFr: 'Pirate', labelEn: 'Pirate', emoji: '☠️', color: '#0891b2', descFr: 'Atteins l\'épisode 500 de One Piece', descEn: 'Reach episode 500 of One Piece', type: 'episodeCount', mal: 21, target: 500 },
+  { key: 'ninja', labelFr: 'Ninja', labelEn: 'Ninja', emoji: '🥷', color: '#fb923c', descFr: 'Termine Naruto original', descEn: 'Complete Naruto original', type: 'completed', mals: [20] },
+  { key: 'hokage', labelFr: 'Hokage', labelEn: 'Hokage', emoji: '🍥', color: '#f59e0b', descFr: 'Termine Naruto Shippūden', descEn: 'Complete Naruto Shippūden', type: 'completed', mals: [1735] },
+  { key: 'shinigami', labelFr: 'Shinigami', labelEn: 'Shinigami', emoji: '⚰️', color: '#c20343', descFr: 'Termine Bleach', descEn: 'Complete Bleach', type: 'completed', mals: [269] },
+  { key: 'saiyan', labelFr: 'Saiyan', labelEn: 'Saiyan', emoji: '🐉', color: '#fbbf24', descFr: 'Termine Dragon Ball Z', descEn: 'Complete Dragon Ball Z', type: 'completed', mals: [813] },
+  { key: 'noname', labelFr: 'No Name', labelEn: 'No Name', emoji: '🎭', color: '#6b7280', descFr: 'Termine Monster', descEn: 'Complete Monster', type: 'completed', mals: [19] },
+  { key: 'timetrav', labelFr: 'Voyageur Temporel', labelEn: 'Time Traveler', emoji: '⏳', color: '#06d2e0', descFr: 'Termine Steins;Gate + Steins;Gate 0', descEn: 'Complete Steins;Gate + Steins;Gate 0', type: 'completed', mals: [9253, 30484] },
+  { key: 'hunter', labelFr: 'Chasseur', labelEn: 'Hunter', emoji: '🎯', color: '#16a34a', descFr: 'Termine Hunter x Hunter (2011)', descEn: 'Complete Hunter x Hunter (2011)', type: 'completed', mals: [11061] },
+  { key: 'titan', labelFr: 'Titan', labelEn: 'Titan', emoji: '🔰', color: '#794f01', descFr: 'Termine Attack on Titan saisons 1, 2 et 3', descEn: 'Complete Attack on Titan seasons 1, 2 and 3', type: 'completed', mals: [16498, 25777, 35760] },
+  { key: 'alchemist', labelFr: 'Alchimiste', labelEn: 'Alchemist', emoji: '⚗️', color: '#facc15', descFr: 'Termine Fullmetal Alchemist Brotherhood', descEn: 'Complete Fullmetal Alchemist Brotherhood', type: 'completed', mals: [5114] },
+  { key: 'exorcist', labelFr: 'Exorciste', labelEn: 'Exorcist', emoji: '🧿', color: '#7c5cfc', descFr: 'Termine Jujutsu Kaisen S1 + S2', descEn: 'Complete Jujutsu Kaisen S1 + S2', type: 'completed', mals: [40748, 51009] },
+  // ═══ Visible behavior achievements ═══
+  { key: 'ponctuel', labelFr: 'Ponctuel', labelEn: 'Punctual', emoji: '📅', color: '#22c67a', descFr: 'Connecte-toi 7 jours d\'affilée', descEn: 'Log in 7 days in a row', type: 'loginStreak', target: 7 },
+  { key: 'procrast', labelFr: 'Procrastinateur', labelEn: 'Procrastinator', emoji: '⏰', color: '#f59e0b', descFr: 'Aie 10 anime "En cours"', descEn: 'Have 10 anime "Watching"', type: 'statusCount', status: 'watching', target: 10 },
+  { key: 'ambitieux', labelFr: 'Ambitieux', labelEn: 'Ambitious', emoji: '🎯', color: '#06d2e0', descFr: 'Aie 30 anime "À voir"', descEn: 'Have 30 anime "To watch"', type: 'statusCount', status: 'planToWatch', target: 30 },
+  { key: 'donateur', labelFr: 'Donateur', labelEn: 'Donor', emoji: '💸​', color: '#00ff95ff', descFr: 'Faire un don PayPal', descEn: 'Donate on PayPal', type: 'flag', flag: 'donated' },
+  { key: 'romantique', labelFr: 'Romantique', labelEn: 'Romantic', emoji: '💕', color: '#f472b6', descFr: 'Termine 20 anime de romance', descEn: 'Complete 20 romance anime', type: 'genreCount', genre: 'romance', target: 20 },
+  // ═══ Hidden achievements (revealed only when unlocked) ═══
+  { key: 'topdutop', labelFr: 'Top du top', labelEn: 'Top of the Top', emoji: '👑', color: '#f6c90e', descFr: 'Remplis ton top 10 séries en entier', descEn: 'Fill your full Top 10 series', type: 'topFull', target: 10, hidden: true },
+  { key: 'compulsive', labelFr: 'Compulsive Scroller', labelEn: 'Compulsive Scroller', emoji: '⚡', color: '#a47dff', descFr: 'Swipe 10 fois en moins de 5 sec dans Discover', descEn: 'Swipe 10 times in under 5s on Discover', type: 'flag', flag: 'compulsiveScroller', hidden: true },
+  { key: 'fanboy', labelFr: 'FanBoy', labelEn: 'FanBoy', emoji: '😍', color: '#ef4444', descFr: 'Donne 20/20 de moyenne à un personnage', descEn: 'Give a 20/20 average to one character', type: 'fanboy', hidden: true },
+  { key: 'voyeur', labelFr: '👀', labelEn: '👀', emoji: '👀', color: '#dc2626', descFr: 'Marque un anime Rx (hentai) comme "À voir"', descEn: 'Mark an Rx (hentai) anime as "To watch"', type: 'rxPlan', hidden: true },
+  { key: 'darksasuke', labelFr: 'Dark Sasuke', labelEn: 'Dark Sasuke', emoji: '🌑', color: '#5900ffff', descFr: 'Rechercher un Seinen', descEn: 'Search a Seinen', type: 'flag', flag: 'seenSeinenFilter', hidden: true },
 ];
+
+function achLabel(ach) {
+  return currentLang === 'en' ? (ach.labelEn || ach.label || '') : (ach.labelFr || ach.label || '');
+}
 
 const DEMO_PATTERNS = {
   shounen: /shounen|shōnen|shonen/i,
@@ -88,6 +104,8 @@ function _animeMatchesDemo(a, demoKey) {
 function checkAchievement(ach) {
   const list = getList();
   const arr = Object.values(list);
+  const data = currentUser ? getUserData(currentUser) : {};
+
   if (ach.type === 'demoCount') {
     const count = arr.filter(a => a.status === 'completed' && _animeMatchesDemo(a, ach.demo)).length;
     return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
@@ -103,7 +121,98 @@ function checkAchievement(ach) {
     const completed = ach.mals.filter(id => list[id]?.status === 'completed').length;
     return { unlocked: completed === ach.mals.length, progress: completed, target: ach.mals.length };
   }
+  if (ach.type === 'statusCount') {
+    const count = arr.filter(a => a.status === ach.status).length;
+    return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
+  }
+  if (ach.type === 'genreCount') {
+    const re = new RegExp(ach.genre, 'i');
+    const count = arr.filter(a =>
+      a.status === 'completed' &&
+      (a.genres || []).some(g => re.test(g))
+    ).length;
+    return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
+  }
+  if (ach.type === 'loginStreak') {
+    const streak = computeLoginStreak(data.loginDays);
+    return { unlocked: streak >= ach.target, progress: Math.min(streak, ach.target), target: ach.target };
+  }
+  if (ach.type === 'flag') {
+    const ok = !!data[ach.flag];
+    return { unlocked: ok, progress: ok ? 1 : 0, target: 1 };
+  }
+  if (ach.type === 'topFull') {
+    const t10 = data.top10 || {};
+    const len = (t10.series || []).length;
+    return { unlocked: len >= ach.target, progress: Math.min(len, ach.target), target: ach.target };
+  }
+  if (ach.type === 'fanboy') {
+    for (const malId in list) {
+      const cs = list[malId].characterScores || {};
+      for (const cid in cs) {
+        const s = cs[cid];
+        const vals = ['charadesign', 'backstory', 'dev'].map(k => s[k]).filter(v => v != null);
+        if (vals.length === 3 && vals.every(v => v === 20)) {
+          return { unlocked: true, progress: 1, target: 1 };
+        }
+      }
+    }
+    return { unlocked: false, progress: 0, target: 1 };
+  }
+  if (ach.type === 'rxPlan') {
+    for (const malId in list) {
+      const a = list[malId];
+      if (a.status !== 'planToWatch') continue;
+      const info = getRatingInfo(a.rating);
+      if (info && info.tier === 'extreme') return { unlocked: true, progress: 1, target: 1 };
+    }
+    return { unlocked: false, progress: 0, target: 1 };
+  }
   return { unlocked: false, progress: 0, target: 1 };
+}
+
+// ── LOGIN STREAK COMPUTATION ──
+function computeLoginStreak(loginDays) {
+  if (!loginDays || !loginDays.length) return 0;
+  const sorted = [...new Set(loginDays)].sort();
+  // Walk back from the most recent day
+  let streak = 1;
+  for (let i = sorted.length - 1; i > 0; i--) {
+    const a = new Date(sorted[i]);
+    const b = new Date(sorted[i - 1]);
+    const diff = Math.round((a - b) / (1000 * 60 * 60 * 24));
+    if (diff === 1) streak++;
+    else break;
+  }
+  // Streak only valid if last login was today or yesterday
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date(todayStr);
+  const lastDay = new Date(sorted[sorted.length - 1]);
+  const sinceLast = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
+  if (sinceLast > 1) return 0;
+  return streak;
+}
+
+function recordLoginDay() {
+  if (!currentUser) return;
+  const data = getUserData(currentUser);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!data.loginDays) data.loginDays = [];
+  if (data.loginDays[data.loginDays.length - 1] !== today) {
+    data.loginDays.push(today);
+    if (data.loginDays.length > 60) data.loginDays = data.loginDays.slice(-60);
+    saveUserData(currentUser, data);
+  }
+}
+
+function markDonateClicked() {
+  if (!currentUser) return;
+  const data = getUserData(currentUser);
+  if (!data.donated) {
+    data.donated = true;
+    saveUserData(currentUser, data);
+    showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(a => a.key === 'donateur'))} !`);
+  }
 }
 
 // Detect a tier upgrade and trigger the unlock animation
@@ -320,17 +429,18 @@ const LANG = {
     achievements_sub: 'Badges et succès débloqués selon ce que tu as regardé',
     your_tier: 'Ton palier actuel', special_achievements: 'Succès spéciaux',
     locked: 'Verrouillé', unlocked: 'Débloqué',
-    podium_title:'Podium des séries', no_top_yet:'Classe des séries dans ton Top 10 pour voir le podium ici.',
-    hide_nsfw:'Masquer le contenu sensible (Rx)',
-    data_section:'Sauvegarde des données',
-    data_msg:'Migre tes données entre appareils ou fais une copie de sauvegarde.',
-    export_btn:'📤 Exporter mes données',
-    import_btn:'📥 Importer une sauvegarde',
-    import_link_auth:'📥 Importer une sauvegarde existante',
-    import_success:'Import réussi',
-    import_error:'Fichier invalide ou corrompu',
-    export_done:'Sauvegarde téléchargée',
-    confirm_import:'Importer écrasera les comptes existants portant le même identifiant. Continuer ?',
+    hidden_ach: 'Achievement caché', hidden_ach_hint: 'Continue à explorer pour le découvrir…',
+    podium_title: 'Podium des séries', no_top_yet: 'Classe des séries dans ton Top 10 pour voir le podium ici.',
+    hide_nsfw: 'Masquer le contenu sensible (Rx)',
+    data_section: 'Sauvegarde des données',
+    data_msg: 'Migre tes données entre appareils ou fais une copie de sauvegarde.',
+    export_btn: '📤 Exporter mes données',
+    import_btn: '📥 Importer une sauvegarde',
+    import_link_auth: '📥 Importer une sauvegarde existante',
+    import_success: 'Import réussi',
+    import_error: 'Fichier invalide ou corrompu',
+    export_done: 'Sauvegarde téléchargée',
+    confirm_import: 'Importer écrasera les comptes existants portant le même identifiant. Continuer ?',
     // Sort & filters
     sort_by: 'Trier', sort_recent: 'Récent', sort_alpha: 'A → Z',
     sort_alpha_rev: 'Z → A', sort_score_desc: 'Note ↓', sort_score_asc: 'Note ↑',
@@ -448,17 +558,19 @@ const LANG = {
     achievements: 'Achievements', achievements_title: 'Achievements',
     achievements_sub: 'Badges and milestones unlocked based on what you watched',
     your_tier: 'Your current tier', special_achievements: 'Special achievements',
-    podium_title:'Series podium', no_top_yet:'Rank some series in your Top 10 to see the podium here.',
-    hide_nsfw:'Hide sensitive content (Rx)',
-    data_section:'Data backup',
-    data_msg:'Migrate your data between devices or back it up.',
-    export_btn:'📤 Export my data',
-    import_btn:'📥 Import a backup',
-    import_link_auth:'📥 Import an existing backup',
-    import_success:'Import successful',
-    import_error:'Invalid or corrupt file',
-    export_done:'Backup downloaded',
-    confirm_import:'Importing will overwrite existing accounts with the same identifier. Continue?',
+    locked: 'Locked', unlocked: 'Unlocked',
+    hidden_ach: 'Hidden achievement', hidden_ach_hint: 'Keep exploring to discover it…',
+    podium_title: 'Series podium', no_top_yet: 'Rank some series in your Top 10 to see the podium here.',
+    hide_nsfw: 'Hide sensitive content (Rx)',
+    data_section: 'Data backup',
+    data_msg: 'Migrate your data between devices or back it up.',
+    export_btn: '📤 Export my data',
+    import_btn: '📥 Import a backup',
+    import_link_auth: '📥 Import an existing backup',
+    import_success: 'Import successful',
+    import_error: 'Invalid or corrupt file',
+    export_done: 'Backup downloaded',
+    confirm_import: 'Importing will overwrite existing accounts with the same identifier. Continue?',
     locked: 'Locked', unlocked: 'Unlocked',
     // Sort & filters
     sort_by: 'Sort', sort_recent: 'Recent', sort_alpha: 'A → Z',
@@ -502,6 +614,7 @@ function applyLang() {
   if (currentView === 'search') refreshSearchCards();
   if (currentView === 'favorites') renderFavorites();
   if (currentView === 'top10') renderTop10();
+  if (currentView === 'achievements') renderAchievements();
   if (currentView === 'discover') { showDiscoverCard(); renderDiscoverStats(); renderDiscoverRecos(); }
 }
 
@@ -709,6 +822,7 @@ function loginUser(u) {
   $('auth-screen').classList.add('hidden');
   $('app').classList.remove('hidden');
   renderUserAvatar();
+  recordLoginDay();
   applyTheme(getUserData(u).theme || 'dark');
   currentLang = getUserData(u).lang || 'fr';
   applyLang();
@@ -749,7 +863,7 @@ function exportAllData() {
       translations: JSON.parse(localStorage.getItem('anitrack_translations') || '{}'),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     const date = new Date().toISOString().slice(0, 10);
@@ -791,7 +905,7 @@ function triggerImport() {
       if (parsed.translations && typeof parsed.translations === 'object') {
         const cur = JSON.parse(localStorage.getItem('anitrack_translations') || '{}');
         Object.assign(cur, parsed.translations);
-        try { localStorage.setItem('anitrack_translations', JSON.stringify(cur)); } catch {}
+        try { localStorage.setItem('anitrack_translations', JSON.stringify(cur)); } catch { }
       }
       showToast(`✓ ${t('import_success')} (${userCount})`);
       setTimeout(() => location.reload(), 1500);
@@ -1113,6 +1227,15 @@ function initGenreFilters() {
     currentGenre = b.dataset.genre;
     currentSearchPage = 1;
     searchAnime();
+    // "Dark Sasuke" — clicked the Seinen demographic filter
+    if (b.dataset.genre === '42' && currentUser) {
+      const data = getUserData(currentUser);
+      if (!data.seenSeinenFilter) {
+        data.seenSeinenFilter = true;
+        saveUserData(currentUser, data);
+        showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(x => x.key === 'darksasuke'))} !`);
+      }
+    }
   }));
 }
 
@@ -1572,6 +1695,22 @@ function playTrailerEmbed(tid, btn) {
 function discoverAction(action) {
   const a = discoverPool[discoverIndex];
   if (!a) return;
+  // Track swipe timing for "Compulsive Scroller" achievement (10 swipes < 5s)
+  if (currentUser) {
+    const userData = getUserData(currentUser);
+    const now = Date.now();
+    if (!userData.swipeTimes) userData.swipeTimes = [];
+    userData.swipeTimes.push(now);
+    if (userData.swipeTimes.length > 12) userData.swipeTimes = userData.swipeTimes.slice(-12);
+    if (userData.swipeTimes.length >= 10 && !userData.compulsiveScroller) {
+      const last10 = userData.swipeTimes.slice(-10);
+      if (last10[9] - last10[0] < 5000) {
+        userData.compulsiveScroller = true;
+        showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(x => x.key === 'compulsive'))} !`);
+      }
+    }
+    saveUserData(currentUser, userData);
+  }
   if (action === 'skip') {
     addSkipped(a.mal_id);
   } else {
@@ -2522,18 +2661,31 @@ function renderAchievements() {
     const r = checkAchievement(ach);
     const desc = currentLang === 'en' ? ach.descEn : ach.descFr;
     const pct = r.target ? Math.round((r.progress / r.target) * 100) : 0;
-    return `<div class="ach-card ${r.unlocked ? 'ach-unlocked' : 'ach-locked'}" style="--ach-color:${ach.color}">
+    // Hidden achievements stay obscured until unlocked
+    if (ach.hidden && !r.unlocked) {
+      return `<div class="ach-card ach-locked ach-hidden-card" style="--ach-color:${ach.color}">
+        <div class="ach-icon">❓</div>
+        <div class="ach-body">
+          <div class="ach-title-row">
+            <span class="ach-title">${t('hidden_ach')}</span>
+            <span class="ach-state">${t('locked')}</span>
+          </div>
+          <div class="ach-desc ach-mystery">${t('hidden_ach_hint')}</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="ach-card ${r.unlocked ? 'ach-unlocked' : 'ach-locked'} ${ach.hidden ? 'ach-hidden-revealed' : ''}" style="--ach-color:${ach.color}">
       <div class="ach-icon">${ach.emoji}</div>
       <div class="ach-body">
         <div class="ach-title-row">
-          <span class="ach-title">${ach.label}</span>
+          <span class="ach-title">${esc(achLabel(ach))}</span>
           <span class="ach-state">${r.unlocked ? '✓ ' + t('unlocked') : t('locked')}</span>
         </div>
         <div class="ach-desc">${esc(desc)}</div>
-        <div class="ach-progress">
+        ${r.target > 1 ? `<div class="ach-progress">
           <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
           <span class="ach-progress-val">${r.progress}/${r.target}</span>
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -2598,16 +2750,16 @@ function renderProfile() {
       <div class="profile-section-title">🏆 ${t('podium_title')}</div>
       <div class="podium-row">
         ${podiumOrder.map(rank => {
-          if (rank >= topSeriesIds.length) return '<div class="podium-slot podium-empty"></div>';
-          const a = list[topSeriesIds[rank]];
-          const rankClass = rank === 0 ? 'podium-1' : rank === 1 ? 'podium-2' : 'podium-3';
-          const rankNum = rank + 1;
-          return `<div class="podium-slot ${rankClass}" onclick="openModal(${a.mal_id},'profile')">
+    if (rank >= topSeriesIds.length) return '<div class="podium-slot podium-empty"></div>';
+    const a = list[topSeriesIds[rank]];
+    const rankClass = rank === 0 ? 'podium-1' : rank === 1 ? 'podium-2' : 'podium-3';
+    const rankNum = rank + 1;
+    return `<div class="podium-slot ${rankClass}" onclick="openModal(${a.mal_id},'profile')">
             <div class="podium-rank-num">${rankNum}</div>
             <img class="podium-img" src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy"/>
             <div class="podium-name">${esc(a.title)}</div>
           </div>`;
-        }).join('')}
+  }).join('')}
       </div>
     </div>` : `
     <div class="profile-section">

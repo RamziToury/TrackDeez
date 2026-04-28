@@ -483,6 +483,14 @@ input[type=range].rating-slider::-moz-range-thumb{width:18px;height:18px;backgro
 .ach-progress-val{font-size:11px;font-weight:700;color:var(--ach-color);min-width:45px;text-align:right}
 .ach-locked .ach-progress-val{color:var(--text2)}
 
+/* Hidden achievements (locked state) */
+.ach-hidden-card{filter:none;opacity:1;background:repeating-linear-gradient(45deg,var(--bg3),var(--bg3) 8px,var(--surface) 8px,var(--surface) 16px);border:1px dashed var(--border2)}
+.ach-hidden-card .ach-icon{font-size:42px;filter:none;opacity:.4}
+.ach-hidden-card .ach-title{color:var(--text2);font-style:italic;letter-spacing:1px}
+.ach-mystery{font-style:italic;color:var(--text2);font-size:11.5px}
+/* Unlocked hidden achievements get a subtle "★ caché" badge */
+.ach-hidden-revealed::before{content:'★';position:absolute;top:6px;right:6px;font-size:11px;color:var(--ach-color);background:color-mix(in srgb,var(--ach-color) 20%,transparent);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+
 /* Cyan nav button (Achievements) */
 .snav-cyan .snav-arrow{color:var(--accent3)}
 .snav-cyan:hover .snav-label,.snav-cyan.active .snav-label{color:var(--accent3)}
