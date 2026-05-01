@@ -601,6 +601,22 @@ input[type=range].rating-slider::-moz-range-thumb{width:18px;height:18px;backgro
   .qr-total{font-size:28px}
 }
 
+/* ── METADATA SYNC BANNER + OVERLAY ── */
+.sync-banner{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;flex-wrap:wrap}
+.sync-banner-warn{background:linear-gradient(135deg,rgba(246,201,14,.08),var(--bg3));border-color:rgba(246,201,14,.4)}
+.sync-banner-text{flex:1;min-width:240px;font-size:12px;color:var(--text2);line-height:1.45}
+.sync-banner-warn .sync-banner-text{color:var(--text)}
+.sync-banner-btn{flex-shrink:0;background:var(--accent-grad);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:12.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow);transition:transform .15s,box-shadow .25s}
+.sync-banner-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px var(--accent-glow)}
+
+.sync-overlay{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.78);backdrop-filter:blur(10px);padding:20px;animation:fadeIn .25s ease}
+.sync-card{background:linear-gradient(160deg,var(--surface),var(--surface2));border:2px solid var(--accent);border-radius:20px;padding:32px 36px;text-align:center;max-width:420px;width:100%;box-shadow:0 20px 60px var(--accent-glow)}
+.sync-spinner{width:42px;height:42px;border:3px solid var(--surface2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
+.sync-text{font-family:var(--font-d);font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:8px}
+.sync-counter{font-size:13px;color:var(--text2);font-weight:700;margin-bottom:14px;letter-spacing:.5px}
+.sync-bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.sync-fill{height:100%;background:var(--accent-grad);border-radius:99px;transition:width .3s ease}
+
 /* ── ACHIEVEMENTS VIEW ── */
 .ach-hero{display:flex;align-items:center;gap:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--badge-color) 22%,var(--surface)),var(--surface));border:2px solid var(--badge-color);border-radius:20px;padding:28px 32px;margin-bottom:30px;box-shadow:0 12px 40px color-mix(in srgb,var(--badge-color) 25%,transparent);position:relative;overflow:hidden}
 .ach-hero::before{content:'';position:absolute;top:-30%;right:-10%;width:60%;height:140%;background:radial-gradient(circle,var(--badge-color),transparent 60%);opacity:.18;pointer-events:none}

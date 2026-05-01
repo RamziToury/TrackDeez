@@ -456,6 +456,12 @@ const LANG = {
     quiz_completed:'✓ Complété', quiz_success:'% de réussite',
     quiz_locked:'🔒 Favorise l\'animé pour débloquer',
     quiz_best:'Meilleur score :',
+    sync_btn:'🔄 Synchroniser les métadonnées',
+    sync_hint:'Si certains achievements semblent ne pas compter, lance une resynchro pour rapatrier les démographies/genres manquants depuis Jikan.',
+    sync_progress:'Synchronisation en cours…',
+    sync_done:'Toutes les métadonnées sont à jour',
+    sync_done_n:'animés synchronisés',
+    sync_skip_uptodate:'Toutes les métadonnées sont déjà à jour ✓',
     install_title:'Installe Track Deez sur ton iPhone',
     install_msg:'Profite de l\'app en plein écran, sans la barre Safari, comme une vraie app.',
     install_step_1:'Appuie sur', install_step_1b:'en bas de Safari',
@@ -609,6 +615,12 @@ const LANG = {
     quiz_completed:'✓ Completed', quiz_success:'% success rate',
     quiz_locked:'🔒 Favorite the anime to unlock',
     quiz_best:'Best score:',
+    sync_btn:'🔄 Sync metadata',
+    sync_hint:'If some achievements don\'t seem to count, run a resync to pull missing demographics/genres from Jikan.',
+    sync_progress:'Syncing…',
+    sync_done:'All metadata is up to date',
+    sync_done_n:'anime synced',
+    sync_skip_uptodate:'All metadata is already up to date ✓',
     install_title:'Install Track Deez on your iPhone',
     install_msg:'Enjoy the app full-screen without Safari\'s bars, like a real native app.',
     install_step_1:'Tap', install_step_1b:'at the bottom of Safari',
@@ -2135,6 +2147,79 @@ async function openModal(malId, source) {
   backfillAnimeMeta(malId);
 }
 
+// ── BULK METADATA RESYNC ──
+// Re-fetches /anime/{id} for every list entry that's missing common metadata
+// (demographics, status_airing, rating, etc.). Used to rescue achievements
+// that depend on fields that weren't returned by the original /anime search.
+function _animeNeedsResync(a) {
+  if (!a) return false;
+  return !a.demographics || !a.demographics.length
+      || !a.status_airing || !a.rating
+      || !a.genres || !a.genres.length;
+}
+
+async function syncAllMetadata() {
+  if (!currentUser) return;
+  const list = getList();
+  const items = Object.entries(list).filter(([_, a]) => _animeNeedsResync(a));
+  if (!items.length) {
+    showToast(`✓ ${t('sync_skip_uptodate')}`);
+    return;
+  }
+  const total = items.length;
+  let done = 0;
+  showSyncOverlay(0, total);
+  for (const [malId, a] of items) {
+    try {
+      await rl();
+      const resp = await fetch(`${JIKAN}/anime/${malId}`);
+      const json = await resp.json();
+      const d = json?.data;
+      if (d) {
+        if (!a.demographics || !a.demographics.length) a.demographics = d.demographics?.map(g => g.name) || [];
+        if (!a.genres       || !a.genres.length)       a.genres       = d.genres?.map(g => g.name) || [];
+        if (!a.themes       || !a.themes.length)       a.themes       = d.themes?.map(g => g.name) || [];
+        if (!a.status_airing) a.status_airing = d.status || null;
+        if (!a.rating)        a.rating        = d.rating || null;
+        if (!a.season)        a.season        = d.season || null;
+        if (!a.year)          a.year          = d.year || (d.aired?.from ? new Date(d.aired.from).getFullYear() : null);
+        if (!a.trailer_id)    a.trailer_id    = extractTrailerId(d.trailer);
+      }
+    } catch {}
+    done++;
+    showSyncOverlay(done, total);
+    // Persist incrementally so a refresh mid-sync doesn't lose progress
+    saveList(list);
+  }
+  hideSyncOverlay();
+  showToast(`✓ ${done} ${t('sync_done_n')}`);
+  if (currentView === 'achievements') renderAchievements();
+}
+
+function showSyncOverlay(done, total) {
+  let overlay = document.getElementById('sync-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sync-overlay';
+    overlay.className = 'sync-overlay';
+    document.body.appendChild(overlay);
+  }
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  overlay.innerHTML = `
+    <div class="sync-card">
+      <div class="sync-spinner"></div>
+      <div class="sync-text">${t('sync_progress')}</div>
+      <div class="sync-counter">${done} / ${total}</div>
+      <div class="sync-bar"><div class="sync-fill" style="width:${pct}%"></div></div>
+    </div>
+  `;
+}
+
+function hideSyncOverlay() {
+  const overlay = document.getElementById('sync-overlay');
+  if (overlay) overlay.remove();
+}
+
 async function backfillAnimeMeta(malId) {
   if (!_modal || _modal.mal_id !== malId) return;
   if (_modal.status_airing && _modal.rating) return; // nothing missing
@@ -3363,10 +3448,17 @@ function renderAchievements() {
   const hiddenCards  = hiddenAchs.map(buildCard).join('');
   const hiddenUnlockedCount = hiddenAchs.filter(a => checkAchievement(a).unlocked).length;
 
+  // Count anime that still have incomplete metadata to nudge resync
+  const needSync = Object.values(getList()).filter(_animeNeedsResync).length;
+
   $('view-achievements').innerHTML = `
     <div class="view-header">
       <h1 class="view-title">${t('achievements_title')}</h1>
       <p class="view-subtitle">${t('achievements_sub')}</p>
+    </div>
+    <div class="sync-banner ${needSync ? 'sync-banner-warn' : ''}">
+      <div class="sync-banner-text">${t('sync_hint')}${needSync ? ` (${needSync})` : ''}</div>
+      <button class="sync-banner-btn" type="button" onclick="syncAllMetadata()">${t('sync_btn')}</button>
     </div>
     <div class="ach-hero" style="--badge-color:${badge.color}">
       <div class="ach-hero-emoji">${badge.emoji}</div>
