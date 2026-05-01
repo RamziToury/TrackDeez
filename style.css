@@ -488,9 +488,25 @@ input[type=range].rating-slider::-moz-range-thumb{width:18px;height:18px;backgro
 .quiz-card.halo-1:hover{box-shadow:0 12px 30px rgba(34,198,122,.45),0 0 0 2px #22c67a}
 .quiz-card.halo-2:hover{box-shadow:0 12px 30px rgba(246,201,14,.5),0 0 0 2px var(--gold)}
 .quiz-card.halo-3:hover{box-shadow:0 12px 30px rgba(220,38,38,.55),0 0 0 2px #ef4444}
-.quiz-card-disabled{opacity:.4;cursor:not-allowed!important;filter:grayscale(.7)}
+.quiz-card-disabled{cursor:not-allowed!important}
 .quiz-card-disabled:hover{transform:none!important}
 .quiz-card-na{color:var(--text2)!important;font-style:italic}
+
+/* Locked cards: heavy desaturation + lock badge */
+.quiz-card-locked-card{filter:grayscale(.95) opacity(.45);box-shadow:none!important;border-color:var(--border)!important}
+.quiz-card-locked-card:hover{box-shadow:none!important;transform:none!important}
+.quiz-card-locked{margin-top:8px;font-size:11px;font-weight:700;color:var(--text2);background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:7px 10px;text-align:center;line-height:1.4}
+
+/* Completed cards: green tint + check badge */
+.quiz-card-complete{position:relative}
+.quiz-card-complete::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:14px;box-shadow:inset 0 0 0 2px #22c67a}
+.quiz-card-completed{margin-top:8px;font-size:12px;font-weight:800;color:#22c67a;background:rgba(34,198,122,.14);border:1px solid rgba(34,198,122,.4);border-radius:8px;padding:6px 10px;text-align:center;letter-spacing:.5px}
+
+/* Best-score progress bar */
+.quiz-card-score-row{margin-top:8px;display:flex;align-items:center;gap:8px}
+.quiz-card-score-bar{flex:1;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.quiz-card-score-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .6s ease}
+.quiz-card-score-pct{font-size:11px;font-weight:700;color:var(--accent2);min-width:36px;text-align:right}
 
 /* Difficulty pill (in runner) */
 .qd-pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border:1px solid}

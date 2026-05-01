@@ -453,6 +453,9 @@ const LANG = {
     quiz_you_picked:'Ta réponse', quiz_correct_was:'Bonne réponse',
     quiz_difficulty:'Difficulté', quiz_diff_1:'Facile', quiz_diff_2:'Moyen', quiz_diff_3:'Difficile',
     quiz_no_questions:'Pas de questions à ce niveau pour le moment.',
+    quiz_completed:'✓ Complété', quiz_success:'% de réussite',
+    quiz_locked:'🔒 Favorise l\'animé pour débloquer',
+    quiz_best:'Meilleur score :',
     install_title:'Installe Track Deez sur ton iPhone',
     install_msg:'Profite de l\'app en plein écran, sans la barre Safari, comme une vraie app.',
     install_step_1:'Appuie sur', install_step_1b:'en bas de Safari',
@@ -603,6 +606,9 @@ const LANG = {
     quiz_you_picked:'Your answer', quiz_correct_was:'Correct answer',
     quiz_difficulty:'Difficulty', quiz_diff_1:'Easy', quiz_diff_2:'Medium', quiz_diff_3:'Hard',
     quiz_no_questions:'No questions at this level yet.',
+    quiz_completed:'✓ Completed', quiz_success:'% success rate',
+    quiz_locked:'🔒 Favorite the anime to unlock',
+    quiz_best:'Best score:',
     install_title:'Install Track Deez on your iPhone',
     install_msg:'Enjoy the app full-screen without Safari\'s bars, like a real native app.',
     install_step_1:'Tap', install_step_1b:'at the bottom of Safari',
@@ -3021,22 +3027,31 @@ function _shuffle(arr) {
 
 function getAvailableQuizzes() {
   const list = getList();
+  const data = currentUser ? getUserData(currentUser) : {};
+  const scores = data.quizScores || {};
   const out = [];
   for (const malId in QUIZ_BANK) {
-    const fav = list[malId]?.favorite;
-    if (!fav) continue;
     const meta = QUIZ_BANK[malId];
+    const fav = !!list[malId]?.favorite;
     out.push({
       malId: Number(malId),
       title: meta.title,
       image: meta.image,
+      unlocked: fav,
       counts: {
         1: getQuizQuestions(malId, 1).length,
         2: getQuizQuestions(malId, 2).length,
         3: getQuizQuestions(malId, 3).length,
       },
+      scores: {
+        1: scores[malId]?.[1] || null,
+        2: scores[malId]?.[2] || null,
+        3: scores[malId]?.[3] || null,
+      },
     });
   }
+  // Show unlocked first, then locked
+  out.sort((a, b) => (b.unlocked ? 1 : 0) - (a.unlocked ? 1 : 0));
   return out;
 }
 
@@ -3071,13 +3086,33 @@ function renderQuizView() {
       <div class="quiz-grid quiz-grid-lvl-${lvl}">
         ${quizzes.map(q => {
           const count = q.counts[lvl] || 0;
-          const disabled = count === 0;
-          return `<button class="quiz-card halo-${lvl} ${disabled?'quiz-card-disabled':''}" type="button" ${disabled?'disabled':`onclick="startQuiz(${q.malId})"`}>
+          const noQuestions = count === 0;
+          const locked = !q.unlocked;
+          const scoreEntry = q.scores[lvl];
+          const pct = scoreEntry && scoreEntry.total ? Math.round((scoreEntry.best / scoreEntry.total) * 100) : null;
+          const completed = scoreEntry?.completed === true;
+          const disabled = locked || noQuestions;
+          // Build status block: locked / completed / best score with bar / no record
+          let statusBlock = '';
+          if (locked) {
+            statusBlock = `<div class="quiz-card-locked">${t('quiz_locked')}</div>`;
+          } else if (completed) {
+            statusBlock = `<div class="quiz-card-completed">${t('quiz_completed')}</div>`;
+          } else if (pct !== null) {
+            statusBlock = `<div class="quiz-card-score-row">
+              <div class="quiz-card-score-bar"><div class="quiz-card-score-fill" style="width:${pct}%"></div></div>
+              <span class="quiz-card-score-pct">${pct}%</span>
+            </div>`;
+          }
+          return `<button class="quiz-card halo-${lvl} ${disabled?'quiz-card-disabled':''} ${locked?'quiz-card-locked-card':''} ${completed?'quiz-card-complete':''}" type="button" ${disabled?'disabled':`onclick="startQuiz(${q.malId})"`}>
             <img class="quiz-card-img" src="${esc(q.image)}" alt="${esc(q.title)}" loading="lazy"/>
             <div class="quiz-card-body">
               <div class="quiz-card-title">${esc(q.title)}</div>
               <div class="quiz-card-meta">${count} ${t('quiz_q_count')}</div>
-              ${disabled ? `<span class="quiz-card-go quiz-card-na">${t('quiz_no_questions')}</span>` : `<span class="quiz-card-go">▶ ${t('quiz_start')}</span>`}
+              ${statusBlock}
+              ${locked ? '' : (noQuestions
+                ? `<span class="quiz-card-go quiz-card-na">${t('quiz_no_questions')}</span>`
+                : `<span class="quiz-card-go">▶ ${t('quiz_start')}</span>`)}
             </div>
           </button>`;
         }).join('')}
@@ -3197,14 +3232,27 @@ function finishQuiz() {
   if (!_quizState || !currentUser) return;
   const s = _quizState;
   const total = s.questions.length;
-  // Persist quiz stats and trigger achievements
   const data = getUserData(currentUser);
   if (!data.quizFirst) data.quizFirst = true;
-  if (s.score === total) {
-    data.perfectQuizCount = (data.perfectQuizCount || 0) + 1;
-  }
-  if (s.score === 0) {
-    data.quizZero = true;
+  if (s.score === total) data.perfectQuizCount = (data.perfectQuizCount || 0) + 1;
+  if (s.score === 0)     data.quizZero = true;
+  // Persist best score per (malId, level). Only write if this run is better
+  // than the stored record OR if no record exists yet.
+  if (!data.quizScores) data.quizScores = {};
+  if (!data.quizScores[s.malId]) data.quizScores[s.malId] = {};
+  const cur = data.quizScores[s.malId][s.level];
+  const newPct = total ? (s.score / total) : 0;
+  const curPct = (cur && cur.total) ? (cur.best / cur.total) : -1;
+  if (!cur || newPct > curPct) {
+    data.quizScores[s.malId][s.level] = {
+      best: s.score,
+      total,
+      completed: s.score === total,
+      lastAt: Date.now(),
+    };
+  } else if (s.score === total && cur && !cur.completed) {
+    // Edge case: same percentage but new run is a perfect — mark completed
+    cur.completed = true;
   }
   saveUserData(currentUser, data);
   renderQuizResults();
