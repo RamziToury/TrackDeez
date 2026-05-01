@@ -598,8 +598,11 @@ input[type=range].rating-slider::-moz-range-thumb{width:18px;height:18px;backgro
 .ach-hero-progress-fill{height:100%;border-radius:99px;transition:width .8s ease}
 .ach-hero-progress-meta{font-size:11px;color:var(--text2);font-weight:600}
 
-.ach-section-title{font-family:var(--font-d);font-size:22px;letter-spacing:2px;color:var(--text);margin-bottom:18px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.ach-section-title{font-family:var(--font-d);font-size:22px;letter-spacing:2px;color:var(--text);margin:28px 0 18px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.ach-section-title:first-of-type{margin-top:0}
 .ach-section-title::before{content:'';width:24px;height:3px;background:var(--accent-grad);border-radius:99px}
+.ach-section-hidden::before{background:linear-gradient(90deg,#6b7280,#1f2937)}
+.ach-section-counter{margin-left:auto;font-family:var(--font-b);font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:99px;text-transform:none}
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding-bottom:20px}
 
 .ach-card{display:flex;gap:14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px 16px;transition:all .25s;position:relative;overflow:hidden}

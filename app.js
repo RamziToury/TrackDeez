@@ -435,7 +435,7 @@ const LANG = {
     avatar_set: 'Photo de profil mise à jour !',
     achievements: 'Achievements', achievements_title: 'Achievements',
     achievements_sub: 'Badges et succès débloqués selon ce que tu as regardé',
-    your_tier: 'Ton palier actuel', special_achievements: 'Succès spéciaux',
+    your_tier: 'Ton palier actuel', special_achievements: 'Succès spéciaux', hidden_achievements_section: 'Succès cachés',
     locked: 'Verrouillé', unlocked: 'Débloqué',
     hidden_ach: 'Achievement caché', hidden_ach_hint: 'Continue à explorer pour le découvrir…',
     quiz:'Quizz', quiz_title:'Quizz',
@@ -585,7 +585,7 @@ const LANG = {
     avatar_set: 'Profile picture updated!',
     achievements: 'Achievements', achievements_title: 'Achievements',
     achievements_sub: 'Badges and milestones unlocked based on what you watched',
-    your_tier: 'Your current tier', special_achievements: 'Special achievements',
+    your_tier: 'Your current tier', special_achievements: 'Special achievements', hidden_achievements_section: 'Hidden achievements',
     locked: 'Locked', unlocked: 'Unlocked',
     hidden_ach: 'Hidden achievement', hidden_ach_hint: 'Keep exploring to discover it…',
     quiz:'Quiz', quiz_title:'Quiz',
@@ -3275,12 +3275,12 @@ function renderAchievements() {
     ? `${completed}/${nextBadge.min} → ${badgeLabel(nextBadge)}`
     : (currentLang === 'fr' ? 'Niveau maximum atteint !' : 'Max tier reached!');
 
-  // Build achievement cards
-  const cards = ACHIEVEMENTS.map(ach => {
+  // Card builder used by both visible and hidden sections
+  const buildCard = (ach) => {
     const r = checkAchievement(ach);
     const desc = currentLang === 'en' ? ach.descEn : ach.descFr;
     const pct = r.target ? Math.round((r.progress / r.target) * 100) : 0;
-    // Hidden achievements stay obscured until unlocked
+    // Hidden + still locked → show the obscured "?" placeholder
     if (ach.hidden && !r.unlocked) {
       return `<div class="ach-card ach-locked ach-hidden-card" style="--ach-color:${ach.color}">
         <div class="ach-icon">❓</div>
@@ -3307,7 +3307,13 @@ function renderAchievements() {
         </div>` : ''}
       </div>
     </div>`;
-  }).join('');
+  };
+
+  const visibleAchs = ACHIEVEMENTS.filter(a => !a.hidden);
+  const hiddenAchs  = ACHIEVEMENTS.filter(a =>  a.hidden);
+  const visibleCards = visibleAchs.map(buildCard).join('');
+  const hiddenCards  = hiddenAchs.map(buildCard).join('');
+  const hiddenUnlockedCount = hiddenAchs.filter(a => checkAchievement(a).unlocked).length;
 
   $('view-achievements').innerHTML = `
     <div class="view-header">
@@ -3326,8 +3332,17 @@ function renderAchievements() {
         </div>
       </div>
     </div>
-    <div class="ach-section-title">${t('special_achievements')}</div>
-    <div class="ach-grid">${cards}</div>
+    ${visibleAchs.length ? `
+      <div class="ach-section-title">${t('special_achievements')}</div>
+      <div class="ach-grid">${visibleCards}</div>
+    ` : ''}
+    ${hiddenAchs.length ? `
+      <div class="ach-section-title ach-section-hidden">
+        ${t('hidden_achievements_section')}
+        <span class="ach-section-counter">${hiddenUnlockedCount}/${hiddenAchs.length}</span>
+      </div>
+      <div class="ach-grid">${hiddenCards}</div>
+    ` : ''}
   `;
 }
 
