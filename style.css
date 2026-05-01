@@ -44,39 +44,28 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .ios-install-steps li::before{content:counter(step);position:absolute;left:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:var(--accent-grad);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;font-family:var(--font-d);letter-spacing:.5px}
 .ios-share{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:rgba(0,122,255,.15);color:#3b82f6;border-radius:7px;font-weight:700;font-size:14px;border:1px solid rgba(59,130,246,.4);margin:0 4px;flex-shrink:0}
 
-/* iOS safe-area handling when in standalone PWA mode */
+/* iOS safe-area handling when running as a standalone PWA */
 @supports (top: env(safe-area-inset-top)) {
-  /* Push the mobile header BELOW the status bar — far simpler and more
-     reliable than trying to grow the header (align-items:center fights the
-     padding-top approach on iOS). The starfield/dark body shows through
-     the gap above, the status bar text stays readable. */
-  .mobile-header { top: env(safe-area-inset-top, 0px) }
-  /* Sidebar (rare iPad PWA case) gets its own top breathing room */
+  /* Sidebar (rare iPad PWA case) — keep top breathing room */
   .sidebar { padding-top: max(20px, env(safe-area-inset-top, 20px)) }
   /* Body horizontal safe-area for landscape iPhones with notch */
   body { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px) }
 }
 
-/* Mobile-only: bottom safe-area + push main-content below the lowered header */
+/* Mobile (≤900px) safe-area handling */
 @media (max-width: 900px) {
-  @supports (top: env(safe-area-inset-top)) {
-    .main-content {
-      padding-top:    calc(54px + env(safe-area-inset-top, 0px));
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    /* Status bar overlay area: paint a solid bar so the time/signal stay legible
-       over our starfield (otherwise white text on busy stars is hard to read) */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: env(safe-area-inset-top, 0px);
-      background: rgba(13,13,20,.92);
-      backdrop-filter: blur(12px);
-      z-index: 49;
-      pointer-events: none;
-    }
-    [data-theme="light"] body::before { background: rgba(242,242,250,.92) }
+  /* Extend the header to cover the status-bar zone with its blurred dark
+     background. Content is pushed to the BOTTOM of the extended header via
+     align-items:flex-end + padding-bottom — that way the logo & nav icons
+     sit BELOW the iOS clock/signal indicators instead of underneath them. */
+  .mobile-header {
+    padding-top:    env(safe-area-inset-top, 0px);
+    height:         calc(54px + env(safe-area-inset-top, 0px));
+    align-items:    flex-end;
+    padding-bottom: 14px;
+  }
+  .main-content {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
