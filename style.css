@@ -29,6 +29,35 @@
 }
 body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;transition:color .3s}
 
+/* ── iOS PWA INSTALL PROMPT ── */
+.ios-install{position:fixed;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:9998;background:linear-gradient(160deg,rgba(30,30,48,.98),rgba(20,20,35,.98));border:2px solid var(--accent);border-radius:18px;padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 40px var(--accent-glow);display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;backdrop-filter:blur(10px);animation:install-up .4s cubic-bezier(.4,1.4,.5,1) forwards;max-width:480px;margin:0 auto}
+[data-theme="light"] .ios-install{background:linear-gradient(160deg,rgba(255,255,255,.98),rgba(245,245,255,.98))}
+@keyframes install-up{from{opacity:0;transform:translateY(40px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ios-install-close{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--text2);font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ios-install-close:hover{background:var(--bg3);color:var(--text)}
+.ios-install-icon{width:54px;height:54px;flex-shrink:0;filter:drop-shadow(0 4px 14px var(--accent-glow))}
+.ios-install-icon svg{width:100%;height:100%;display:block}
+.ios-install-title{font-family:var(--font-d);font-size:18px;letter-spacing:1.5px;color:var(--text);line-height:1.2;margin-top:2px}
+.ios-install-msg{font-size:12.5px;color:var(--text2);line-height:1.5;max-width:380px}
+.ios-install-steps{counter-reset:step;list-style:none;padding:0;margin:6px 0 0;width:100%;display:flex;flex-direction:column;gap:8px}
+.ios-install-steps li{counter-increment:step;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px 10px 38px;font-size:12.5px;color:var(--text);position:relative;text-align:left;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.4}
+.ios-install-steps li::before{content:counter(step);position:absolute;left:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:var(--accent-grad);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;font-family:var(--font-d);letter-spacing:.5px}
+.ios-share{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:rgba(0,122,255,.15);color:#3b82f6;border-radius:7px;font-weight:700;font-size:14px;border:1px solid rgba(59,130,246,.4);margin:0 4px;flex-shrink:0}
+
+/* iOS safe-area padding when in standalone mode */
+@supports (padding: max(0px)) {
+  .sidebar{padding-top:max(20px, env(safe-area-inset-top))}
+  .mobile-header{padding-top:max(0px, env(safe-area-inset-top));height:calc(54px + env(safe-area-inset-top, 0px))}
+  .main-content{padding-bottom:env(safe-area-inset-bottom, 0px)}
+  body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+}
+
+/* iOS-only: prevent text selection callout on long-press */
+@supports (-webkit-touch-callout: none) {
+  body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  input,textarea,.modal-synopsis,.review-text,.qw-lore,.dc-synopsis,.quiz-feedback-lore{-webkit-user-select:text;user-select:text}
+}
+
 /* ── STARFIELD BACKGROUND ── */
 #starfield-bg{position:fixed;inset:0;z-index:0;pointer-events:none;display:block;width:100%;height:100%}
 body{background:transparent}
@@ -444,6 +473,123 @@ input[type=range].rating-slider::-moz-range-thumb{width:18px;height:18px;backgro
 .demo-btn:not(.active){border-color:var(--accent)!important;color:var(--accent2)!important;background:transparent}
 .demo-btn:not(.active):hover{background:var(--accent-glow)!important}
 .demo-btn.active{background:var(--accent-grad)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 4px 14px var(--accent-glow)}
+
+/* ── QUIZZ DIFFICULTY BAR ── */
+.quiz-difficulty-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:18px 0 22px;padding:10px 14px;background:linear-gradient(135deg,rgba(124,92,252,.06),rgba(6,210,224,.06));border:1px solid var(--border);border-radius:12px}
+.qd-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2);margin-right:8px}
+.qd-btn{background:transparent;border:1.5px solid var(--border);color:var(--text2);padding:7px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.4px}
+.qd-btn:hover{transform:translateY(-1px)}
+/* Difficulty colors */
+.qd-1{--qd-color:#22c67a;--qd-glow:rgba(34,198,122,.45)}
+.qd-2{--qd-color:#f6c90e;--qd-glow:rgba(246,201,14,.45)}
+.qd-3{--qd-color:#ef4444;--qd-glow:rgba(220,38,38,.45)}
+.qd-btn:hover{border-color:var(--qd-color);color:var(--qd-color)}
+.qd-btn.active{background:var(--qd-color);border-color:var(--qd-color);color:#0d0d14;box-shadow:0 4px 16px var(--qd-glow)}
+
+/* Card halo by difficulty */
+.quiz-card.halo-1{box-shadow:0 0 0 0 transparent,inset 0 0 0 1.5px transparent}
+.quiz-card.halo-1{box-shadow:0 0 18px rgba(34,198,122,.25),0 0 0 1.5px rgba(34,198,122,.4)}
+.quiz-card.halo-2{box-shadow:0 0 22px rgba(246,201,14,.32),0 0 0 1.5px rgba(246,201,14,.5)}
+.quiz-card.halo-3{box-shadow:0 0 26px rgba(220,38,38,.38),0 0 0 1.5px rgba(220,38,38,.55)}
+.quiz-card.halo-1:hover{box-shadow:0 12px 30px rgba(34,198,122,.45),0 0 0 2px #22c67a}
+.quiz-card.halo-2:hover{box-shadow:0 12px 30px rgba(246,201,14,.5),0 0 0 2px var(--gold)}
+.quiz-card.halo-3:hover{box-shadow:0 12px 30px rgba(220,38,38,.55),0 0 0 2px #ef4444}
+.quiz-card-disabled{opacity:.4;cursor:not-allowed!important;filter:grayscale(.7)}
+.quiz-card-disabled:hover{transform:none!important}
+.quiz-card-na{color:var(--text2)!important;font-style:italic}
+
+/* Difficulty pill (in runner) */
+.qd-pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border:1px solid}
+.qd-pill-1{background:rgba(34,198,122,.16);color:#22c67a;border-color:rgba(34,198,122,.4)}
+.qd-pill-2{background:rgba(246,201,14,.16);color:var(--gold);border-color:rgba(246,201,14,.4)}
+.qd-pill-3{background:rgba(220,38,38,.16);color:#ef4444;border-color:rgba(220,38,38,.4)}
+
+/* ── QUIZZ VIEW ── */
+.quiz-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px 20px;text-align:center;color:var(--text2);font-size:13px;line-height:1.6;background:var(--bg3);border:1px dashed var(--border);border-radius:14px;max-width:600px;margin:20px auto}
+.quiz-empty .empty-icon{font-size:48px;opacity:.5}
+.quiz-section-title{font-family:var(--font-d);font-size:20px;letter-spacing:2px;color:var(--text);margin:24px 0 14px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.quiz-section-title::before{content:'';width:24px;height:3px;background:var(--accent-grad);border-radius:99px}
+.quiz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.quiz-card{display:flex;flex-direction:column;background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:all .25s;color:var(--text)}
+.quiz-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 30px var(--accent-glow)}
+.quiz-card-img{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--surface)}
+.quiz-card-body{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.quiz-card-title{font-family:var(--font-d);font-size:20px;letter-spacing:1.5px;color:var(--text)}
+.quiz-card-meta{font-size:11px;color:var(--text2);font-weight:600}
+.quiz-card-go{font-size:12px;font-weight:700;color:var(--accent2);margin-top:6px}
+
+/* Runner */
+.quiz-runner{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:24px 28px;max-width:760px;margin:0 auto}
+.quiz-runner-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;color:var(--text2)}
+.quiz-runner-head strong{color:var(--text);font-family:var(--font-d);font-size:18px;letter-spacing:1px;margin-left:4px}
+.quiz-runner-score strong{color:var(--accent2)}
+.quiz-progress-bar{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:24px}
+.quiz-progress-fill{height:100%;background:var(--accent-grad);border-radius:99px;transition:width .4s ease}
+.quiz-question-text{font-family:var(--font-d);font-size:24px;letter-spacing:1px;line-height:1.3;color:var(--text);margin-bottom:24px;padding:14px 0}
+.quiz-choices{display:flex;flex-direction:column;gap:10px}
+.quiz-choice{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--text);cursor:pointer;text-align:left;transition:all .15s;width:100%}
+.quiz-choice:hover{border-color:var(--accent);background:var(--surface2);transform:translateX(2px)}
+.quiz-choice-letter{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:50%;font-weight:700;font-size:13px;flex-shrink:0;font-family:var(--font-d);letter-spacing:.5px}
+.quiz-choice-text{flex:1;line-height:1.4}
+.quiz-choice-icon{font-size:18px;font-weight:700;flex-shrink:0}
+.quiz-choice-correct{border-color:#22c67a!important;background:rgba(34,198,122,.16)!important}
+.quiz-choice-correct .quiz-choice-letter,.quiz-choice-correct .quiz-choice-icon{color:#22c67a;background:rgba(34,198,122,.18);border-color:#22c67a}
+.quiz-choice-wrong{border-color:#ef4444!important;background:rgba(220,38,38,.16)!important}
+.quiz-choice-wrong .quiz-choice-letter,.quiz-choice-wrong .quiz-choice-icon{color:#ef4444;background:rgba(220,38,38,.18);border-color:#ef4444}
+.quiz-choice-disabled{opacity:.5;cursor:default}
+.quiz-choice-disabled:hover{transform:none;border-color:var(--border);background:var(--surface)}
+.quiz-feedback{margin-top:18px;padding:16px;border-radius:12px;border-left:4px solid}
+.quiz-feedback.fb-ok{background:rgba(34,198,122,.1);border-color:#22c67a}
+.quiz-feedback.fb-ko{background:rgba(220,38,38,.1);border-color:#ef4444}
+.quiz-feedback-head{font-family:var(--font-d);font-size:18px;letter-spacing:1.5px;margin-bottom:8px}
+.fb-ok .quiz-feedback-head{color:#22c67a}
+.fb-ko .quiz-feedback-head{color:#ef4444}
+.quiz-feedback-lore{font-size:13px;line-height:1.55;color:var(--text)}
+.quiz-feedback-lore strong{color:var(--accent2);margin-right:6px}
+.quiz-next-btn{margin-top:16px;width:100%;background:var(--accent-grad);color:#fff;border:none;border-radius:12px;padding:14px;font-family:var(--font-d);font-size:18px;letter-spacing:2px;cursor:pointer;box-shadow:0 6px 22px var(--accent-glow);transition:transform .15s}
+.quiz-next-btn:hover{transform:translateY(-2px)}
+
+/* Result screen */
+.quiz-result-card{background:linear-gradient(160deg,var(--surface),var(--surface2));border:2px solid var(--accent);border-radius:22px;padding:36px;text-align:center;max-width:520px;margin:0 auto 28px;box-shadow:0 20px 60px var(--accent-glow);position:relative}
+.qr-perfect{border-color:var(--gold);box-shadow:0 20px 60px var(--gold-glow);background:linear-gradient(160deg,rgba(246,201,14,.18),var(--surface))}
+.qr-zero{border-color:#ef4444;box-shadow:0 20px 60px rgba(220,38,38,.35);background:linear-gradient(160deg,rgba(220,38,38,.16),var(--surface))}
+.qr-emoji{font-size:80px;line-height:1;margin-bottom:8px;animation:qr-bounce 1.4s ease-in-out infinite alternate}
+@keyframes qr-bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-6px) scale(1.04)}}
+.qr-score{font-family:var(--font-d);font-size:84px;line-height:1;color:var(--accent2);text-shadow:0 0 24px var(--accent-glow);letter-spacing:4px}
+.qr-perfect .qr-score{color:var(--gold);text-shadow:0 0 30px var(--gold)}
+.qr-zero .qr-score{color:#ef4444;text-shadow:0 0 24px rgba(220,38,38,.5)}
+.qr-total{font-size:36px;color:var(--text2);font-weight:400}
+.qr-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-top:6px;font-weight:700}
+.qr-headline{margin-top:14px;font-family:var(--font-d);font-size:22px;letter-spacing:1.5px;color:var(--text)}
+.qr-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:24px}
+.qr-btn{padding:11px 22px;border-radius:11px;border:none;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s}
+.qr-btn-retry{background:var(--accent-grad);color:#fff;box-shadow:0 4px 14px var(--accent-glow)}
+.qr-btn-retry:hover{transform:translateY(-1px);box-shadow:0 8px 22px var(--accent-glow)}
+.qr-btn-back{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.qr-btn-back:hover{border-color:var(--accent3);color:var(--accent3)}
+
+.quiz-wrong-list{display:flex;flex-direction:column;gap:12px;max-width:760px;margin:0 auto}
+.quiz-wrong-item{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 18px;border-left:4px solid #ef4444}
+.qw-q{font-family:var(--font-d);font-size:17px;letter-spacing:.8px;color:var(--text);margin-bottom:12px;line-height:1.35}
+.qw-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:13px;color:var(--text)}
+.qw-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:5px;flex-shrink:0;min-width:120px;text-align:center}
+.tag-bad{background:rgba(220,38,38,.16);color:#ef4444;border:1px solid rgba(220,38,38,.4)}
+.tag-ok{background:rgba(34,198,122,.16);color:#22c67a;border:1px solid rgba(34,198,122,.4)}
+.qw-lore{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:12.5px;line-height:1.6;color:var(--text2)}
+.qw-lore strong{color:var(--accent2);margin-right:6px}
+
+/* Cyan Quizz nav button */
+.snav-quizz .snav-arrow{color:#06d2e0}
+.snav-quizz:hover .snav-label,.snav-quizz.active .snav-label{color:#06d2e0}
+.snav-quizz.active{box-shadow:inset 3px 0 0 #06d2e0;background:rgba(6,210,224,.06)}
+.snav-quizz:hover{background:rgba(6,210,224,.06)}
+
+@media(max-width:680px){
+  .quiz-runner{padding:18px}
+  .quiz-question-text{font-size:19px}
+  .qr-score{font-size:64px}
+  .qr-total{font-size:28px}
+}
 
 /* ── ACHIEVEMENTS VIEW ── */
 .ach-hero{display:flex;align-items:center;gap:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--badge-color) 22%,var(--surface)),var(--surface));border:2px solid var(--badge-color);border-radius:20px;padding:28px 32px;margin-bottom:30px;box-shadow:0 12px 40px color-mix(in srgb,var(--badge-color) 25%,transparent);position:relative;overflow:hidden}

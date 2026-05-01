@@ -2,11 +2,24 @@
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Track Deez</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
   <link rel="alternate icon" href="favicon.svg"/>
   <meta name="theme-color" content="#7c5cfc"/>
+
+  <!-- PWA — Web App Manifest -->
+  <link rel="manifest" href="manifest.webmanifest"/>
+
+  <!-- iOS — Add to Home Screen (standalone mode) -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Track Deez"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.svg"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.svg"/>
+
+  <!-- Viewport optimisations for iOS PWA standalone -->
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no"/>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
@@ -101,6 +114,10 @@
         <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         <span class="snav-label" data-i18n="discover">À découvrir</span>
       </button>
+      <button class="snav-btn snav-quizz" data-view="quizz">
+        <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <span class="snav-label" data-i18n="quiz">Quizz</span>
+      </button>
       <button class="snav-btn snav-gold" data-view="top10">
         <svg class="snav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         <span class="snav-label" data-i18n="top10">Top 10</span>
@@ -151,6 +168,9 @@
       </button>
       <button class="mnav-btn" data-view="discover" aria-label="Découvrir">
         <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L19 9.5l-3.5 3.4.9 5.1L12 15.5l-4.4 2.5.9-5.1L5 9.5l5.1-1.9L12 3z"/></svg>
+      </button>
+      <button class="mnav-btn" data-view="quizz" aria-label="Quizz">
+        <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
       <button class="mnav-btn" data-view="top10" aria-label="Top 10">
         <svg class="mnav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
@@ -387,6 +407,9 @@
       </div>
     </div>
 
+    <!-- ── QUIZZ VIEW ── -->
+    <div id="view-quizz" class="view"></div>
+
     <!-- ── ACHIEVEMENTS VIEW ── -->
     <div id="view-achievements" class="view"></div>
 
@@ -415,6 +438,27 @@
     <button class="modal-close" onclick="closeProfile()">✕</button>
     <div id="profile-content" class="modal-content"></div>
   </div>
+</div>
+
+<!-- ═══════════════ iOS INSTALL PROMPT ═══════════════ -->
+<div id="ios-install-prompt" class="ios-install hidden">
+  <button class="ios-install-close" onclick="dismissIosInstall()" aria-label="Fermer">✕</button>
+  <div class="ios-install-icon">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 2 L28 9 L28 23 L16 30 L4 23 L4 9 Z" fill="url(#logoGrad)"/>
+      <rect x="9"  y="11" width="13" height="2.4" rx="1.2" fill="white"/>
+      <rect x="9"  y="15" width="9"  height="2.4" rx="1.2" fill="white"/>
+      <rect x="9"  y="19" width="14" height="2.4" rx="1.2" fill="white"/>
+      <circle cx="20.5" cy="16.2" r="1.4" fill="#f6c90e"/>
+    </svg>
+  </div>
+  <div class="ios-install-title" data-i18n="install_title">Installe Track Deez sur ton iPhone</div>
+  <div class="ios-install-msg" data-i18n="install_msg">Profite de l'app en plein écran, sans la barre Safari, comme une vraie app.</div>
+  <ol class="ios-install-steps">
+    <li><span data-i18n="install_step_1">Appuie sur</span> <span class="ios-share">⬆</span> <span data-i18n="install_step_1b">en bas de Safari</span></li>
+    <li data-i18n="install_step_2">Choisis « Sur l'écran d'accueil »</li>
+    <li data-i18n="install_step_3">Tape « Ajouter » en haut à droite</li>
+  </ol>
 </div>
 
 <!-- ═══════════════ AVATAR PICKER ═══════════════ -->
