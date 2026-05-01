@@ -21,7 +21,7 @@ let _recoPools = {};
 let _recoFallback = null; // top-rated overall, lazy-loaded
 let listSortMode = 'recent';
 let searchHideAdded = false;
-let searchHideNsfw  = false;
+let searchHideNsfw = false;
 let _modalTab = 'details';
 let _charCache = {};
 let _themesCache = {};
@@ -46,25 +46,45 @@ function badgeLabel(b) { return currentLang === 'en' ? b.labelEn : b.labelFr; }
 
 // ── ACHIEVEMENTS (special milestones) ──────────────
 const ACHIEVEMENTS = [
-  // Demographic completions (20+ each)
-  { key: 'warrior', label: 'Warrior', emoji: '⚔️', color: '#ef4444', descFr: 'Termine 20 shōnen', descEn: 'Complete 20 shōnen anime', type: 'demoCount', demo: 'shounen', target: 20 },
-  { key: 'saint', label: 'Saint', emoji: '🛐', color: '#a78bfa', descFr: 'Termine 20 seinen', descEn: 'Complete 20 seinen anime', type: 'demoCount', demo: 'seinen', target: 20 },
-  { key: 'magicienne', label: 'Magicienne', emoji: '🌸', color: '#f472b6', descFr: 'Termine 20 shōjo', descEn: 'Complete 20 shōjo anime', type: 'demoCount', demo: 'shoujo', target: 20 },
-  { key: 'femfatale', label: 'Femme fatale', emoji: '🌹', color: '#dc2626', descFr: 'Termine 20 josei', descEn: 'Complete 20 josei anime', type: 'demoCount', demo: 'josei', target: 20 },
-  { key: 'innocent', label: 'Innocent', emoji: '🧸', color: '#22c67a', descFr: 'Termine 20 anime "kids"', descEn: 'Complete 20 kids anime', type: 'demoCount', demo: 'kids', target: 20 },
-  // Specific anime completions
-  { key: 'pirate', label: 'Pirate', emoji: '☠️', color: '#0891b2', descFr: 'Atteins l\'épisode 500 de One Piece', descEn: 'Reach episode 500 of One Piece', type: 'episodeCount', mal: 21, target: 500, animeName: 'One Piece' },
-  { key: 'ninja', label: 'Ninja', emoji: '🥷', color: '#fb923c', descFr: 'Termine Naruto original', descEn: 'Complete Naruto original', type: 'completed', mals: [20] },
-  { key: 'hokage', label: 'Hokage', emoji: '🍥', color: '#f59e0b', descFr: 'Termine Naruto Shippūden', descEn: 'Complete Naruto Shippūden', type: 'completed', mals: [1735] },
-  { key: 'shinigami', label: 'Shinigami', emoji: '⚰️', color: '#c20343ff', descFr: 'Termine Bleach', descEn: 'Complete Bleach', type: 'completed', mals: [269] },
-  { key: 'saiyan', label: 'Saiyan', emoji: '🐉', color: '#fbbf24', descFr: 'Termine Dragon Ball Z', descEn: 'Complete Dragon Ball Z', type: 'completed', mals: [813] },
-  { key: 'noname', label: 'No Name', emoji: '🎭', color: '#6b7280', descFr: 'Termine Monster', descEn: 'Complete Monster', type: 'completed', mals: [19] },
-  { key: 'timetrav', label: 'Time Traveler', emoji: '⏳', color: '#06d2e0', descFr: 'Termine Steins;Gate + Steins;Gate 0', descEn: 'Complete Steins;Gate + Steins;Gate 0', type: 'completed', mals: [9253, 30484] },
-  { key: 'hunter', label: 'Hunter', emoji: '🎯', color: '#16a34a', descFr: 'Termine Hunter x Hunter (2011)', descEn: 'Complete Hunter x Hunter (2011)', type: 'completed', mals: [11061] },
-  { key: 'titan', label: 'Titan', emoji: '🔰', color: '#794f01ff', descFr: 'Termine Attack on Titan saisons 1, 2 et 3', descEn: 'Complete Attack on Titan seasons 1, 2 and 3', type: 'completed', mals: [16498, 25777, 35760] },
-  { key: 'alchemist', label: 'Alchemist', emoji: '⚗️', color: '#facc15', descFr: 'Termine Fullmetal Alchemist Brotherhood', descEn: 'Complete Fullmetal Alchemist Brotherhood', type: 'completed', mals: [5114] },
-  { key: 'exorcist', label: 'Exorcist', emoji: '🧿', color: '#7c5cfc', descFr: 'Termine Jujutsu Kaisen S1 + S2', descEn: 'Complete Jujutsu Kaisen S1 + S2', type: 'completed', mals: [40748, 51009] },
+  // ═══ Demographic completions (20+ each) ═══
+  { key: 'warrior', labelFr: 'Guerrier', labelEn: 'Warrior', emoji: '⚔️', color: '#ef4444', descFr: 'Termine 20 shōnen', descEn: 'Complete 20 shōnen anime', type: 'demoCount', demo: 'shounen', target: 20 },
+  { key: 'saint', labelFr: 'Saint', labelEn: 'Saint', emoji: '🛐', color: '#a78bfa', descFr: 'Termine 20 seinen', descEn: 'Complete 20 seinen anime', type: 'demoCount', demo: 'seinen', target: 20 },
+  { key: 'magicienne', labelFr: 'Magicienne', labelEn: 'Magician', emoji: '🌸', color: '#f472b6', descFr: 'Termine 20 shōjo', descEn: 'Complete 20 shōjo anime', type: 'demoCount', demo: 'shoujo', target: 20 },
+  { key: 'femfatale', labelFr: 'Femme fatale', labelEn: 'Femme Fatale', emoji: '🌹', color: '#dc2626', descFr: 'Termine 20 josei', descEn: 'Complete 20 josei anime', type: 'demoCount', demo: 'josei', target: 20 },
+  { key: 'innocent', labelFr: 'Innocent', labelEn: 'Innocent', emoji: '🧸', color: '#22c67a', descFr: 'Termine 20 anime "kids"', descEn: 'Complete 20 kids anime', type: 'demoCount', demo: 'kids', target: 20 },
+  // ═══ Specific anime completions ═══
+  { key: 'pirate', labelFr: 'Pirate', labelEn: 'Pirate', emoji: '☠️', color: '#0891b2', descFr: 'Atteins l\'épisode 500 de One Piece', descEn: 'Reach episode 500 of One Piece', type: 'episodeCount', mal: 21, target: 500 },
+  { key: 'ninja', labelFr: 'Ninja', labelEn: 'Ninja', emoji: '🥷', color: '#fb923c', descFr: 'Termine Naruto original', descEn: 'Complete Naruto original', type: 'completed', mals: [20] },
+  { key: 'hokage', labelFr: 'Hokage', labelEn: 'Hokage', emoji: '🍥', color: '#f59e0b', descFr: 'Termine Naruto Shippūden', descEn: 'Complete Naruto Shippūden', type: 'completed', mals: [1735] },
+  { key: 'shinigami', labelFr: 'Shinigami', labelEn: 'Shinigami', emoji: '⚰️', color: '#c20343', descFr: 'Termine Bleach', descEn: 'Complete Bleach', type: 'completed', mals: [269] },
+  { key: 'saiyan', labelFr: 'Saiyan', labelEn: 'Saiyan', emoji: '🐉', color: '#fbbf24', descFr: 'Termine Dragon Ball Z', descEn: 'Complete Dragon Ball Z', type: 'completed', mals: [813] },
+  { key: 'noname', labelFr: 'No Name', labelEn: 'No Name', emoji: '🎭', color: '#6b7280', descFr: 'Termine Monster', descEn: 'Complete Monster', type: 'completed', mals: [19] },
+  { key: 'timetrav', labelFr: 'Voyageur Temporel', labelEn: 'Time Traveler', emoji: '⏳', color: '#06d2e0', descFr: 'Termine Steins;Gate + Steins;Gate 0', descEn: 'Complete Steins;Gate + Steins;Gate 0', type: 'completed', mals: [9253, 30484] },
+  { key: 'hunter', labelFr: 'Chasseur', labelEn: 'Hunter', emoji: '🎯', color: '#16a34a', descFr: 'Termine Hunter x Hunter (2011)', descEn: 'Complete Hunter x Hunter (2011)', type: 'completed', mals: [11061] },
+  { key: 'titan', labelFr: 'Titan', labelEn: 'Titan', emoji: '🔰', color: '#794f01', descFr: 'Termine Attack on Titan saisons 1, 2 et 3', descEn: 'Complete Attack on Titan seasons 1, 2 and 3', type: 'completed', mals: [16498, 25777, 35760] },
+  { key: 'alchemist', labelFr: 'Alchimiste', labelEn: 'Alchemist', emoji: '⚗️', color: '#facc15', descFr: 'Termine Fullmetal Alchemist Brotherhood', descEn: 'Complete Fullmetal Alchemist Brotherhood', type: 'completed', mals: [5114] },
+  { key: 'exorcist', labelFr: 'Exorciste', labelEn: 'Exorcist', emoji: '🧿', color: '#7c5cfc', descFr: 'Termine Jujutsu Kaisen S1 + S2', descEn: 'Complete Jujutsu Kaisen S1 + S2', type: 'completed', mals: [40748, 51009] },
+  // ═══ Visible behavior achievements ═══
+  { key: 'ponctuel', labelFr: 'Ponctuel', labelEn: 'Punctual', emoji: '📅', color: '#22c67a', descFr: 'Connecte-toi 7 jours d\'affilée', descEn: 'Log in 7 days in a row', type: 'loginStreak', target: 7 },
+  { key: 'procrast', labelFr: 'Procrastinateur', labelEn: 'Procrastinator', emoji: '⏰', color: '#f59e0b', descFr: 'Aie 10 anime "En cours"', descEn: 'Have 10 anime "Watching"', type: 'statusCount', status: 'watching', target: 10 },
+  { key: 'ambitieux', labelFr: 'Ambitieux', labelEn: 'Ambitious', emoji: '🎯', color: '#06d2e0', descFr: 'Aie 30 anime "À voir"', descEn: 'Have 30 anime "To watch"', type: 'statusCount', status: 'planToWatch', target: 30 },
+  { key: 'donateur', labelFr: 'Donateur', labelEn: 'Donor', emoji: '💸​', color: '#00ff95ff', descFr: 'Faire un don PayPal', descEn: 'Donate on PayPal', type: 'flag', flag: 'donated' },
+  { key: 'romantique', labelFr: 'Romantique', labelEn: 'Romantic', emoji: '💕', color: '#f472b6', descFr: 'Termine 20 anime de romance', descEn: 'Complete 20 romance anime', type: 'genreCount', genre: 'romance', target: 20 },
+  // ═══ Hidden achievements (revealed only when unlocked) ═══
+  { key: 'topdutop', labelFr: 'Top du top', labelEn: 'Top of the Top', emoji: '👑', color: '#f6c90e', descFr: 'Remplis ton top 10 séries en entier', descEn: 'Fill your full Top 10 series', type: 'topFull', target: 10, hidden: true },
+  { key: 'compulsive', labelFr: 'Compulsive Scroller', labelEn: 'Compulsive Scroller', emoji: '⚡', color: '#a47dff', descFr: 'Swipe 10 fois en moins de 5 sec dans Discover', descEn: 'Swipe 10 times in under 5s on Discover', type: 'flag', flag: 'compulsiveScroller', hidden: true },
+  { key: 'fanboy', labelFr: 'FanBoy', labelEn: 'FanBoy', emoji: '😍', color: '#ef4444', descFr: 'Donne 20/20 de moyenne à un personnage', descEn: 'Give a 20/20 average to one character', type: 'fanboy', hidden: true },
+  { key: 'voyeur', labelFr: '👀', labelEn: '👀', emoji: '👀', color: '#dc2626', descFr: 'Marque un anime Rx (hentai) comme "À voir"', descEn: 'Mark an Rx (hentai) anime as "To watch"', type: 'rxPlan', hidden: true },
+  { key: 'darksasuke', labelFr: 'Dark Sasuke', labelEn: 'Dark Sasuke', emoji: '🌑', color: '#5900ff', descFr: 'Rechercher un Seinen', descEn: 'Search a Seinen', type: 'flag', flag: 'seenSeinenFilter', hidden: true },
+  // ═══ Quiz achievements ═══
+  { key:'curieux',  labelFr:'Curieux', labelEn:'Curious', emoji:'🤔', color:'#06d2e0', descFr:'Termine ton premier quizz',               descEn:'Complete your first quiz',                  type:'flag', flag:'quizFirst' },
+  { key:'fivehead', labelFr:'5Head',   labelEn:'5Head',   emoji:'🧠', color:'#a78bfa', descFr:'Obtiens 100% de bonnes réponses sur 5 quizz', descEn:'Get 100% on 5 quizzes',                 type:'quizPerfect', target:5, hidden:true },
+  { key:'onehead',  labelFr:'1Head',   labelEn:'1Head',   emoji:'🤡', color:'#dc2626', descFr:'Obtiens 0% à un quizz',                   descEn:'Get 0% on a quiz',                          type:'flag', flag:'quizZero', hidden:true },
 ];
+
+function achLabel(ach) {
+  return currentLang === 'en' ? (ach.labelEn || ach.label || '') : (ach.labelFr || ach.label || '');
+}
 
 const DEMO_PATTERNS = {
   shounen: /shounen|shōnen|shonen/i,
@@ -88,6 +108,8 @@ function _animeMatchesDemo(a, demoKey) {
 function checkAchievement(ach) {
   const list = getList();
   const arr = Object.values(list);
+  const data = currentUser ? getUserData(currentUser) : {};
+
   if (ach.type === 'demoCount') {
     const count = arr.filter(a => a.status === 'completed' && _animeMatchesDemo(a, ach.demo)).length;
     return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
@@ -103,7 +125,102 @@ function checkAchievement(ach) {
     const completed = ach.mals.filter(id => list[id]?.status === 'completed').length;
     return { unlocked: completed === ach.mals.length, progress: completed, target: ach.mals.length };
   }
+  if (ach.type === 'statusCount') {
+    const count = arr.filter(a => a.status === ach.status).length;
+    return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
+  }
+  if (ach.type === 'genreCount') {
+    const re = new RegExp(ach.genre, 'i');
+    const count = arr.filter(a =>
+      a.status === 'completed' &&
+      (a.genres || []).some(g => re.test(g))
+    ).length;
+    return { unlocked: count >= ach.target, progress: Math.min(count, ach.target), target: ach.target };
+  }
+  if (ach.type === 'loginStreak') {
+    const streak = computeLoginStreak(data.loginDays);
+    return { unlocked: streak >= ach.target, progress: Math.min(streak, ach.target), target: ach.target };
+  }
+  if (ach.type === 'flag') {
+    const ok = !!data[ach.flag];
+    return { unlocked: ok, progress: ok ? 1 : 0, target: 1 };
+  }
+  if (ach.type === 'topFull') {
+    const t10 = data.top10 || {};
+    const len = (t10.series || []).length;
+    return { unlocked: len >= ach.target, progress: Math.min(len, ach.target), target: ach.target };
+  }
+  if (ach.type === 'fanboy') {
+    for (const malId in list) {
+      const cs = list[malId].characterScores || {};
+      for (const cid in cs) {
+        const s = cs[cid];
+        const vals = ['charadesign', 'backstory', 'dev'].map(k => s[k]).filter(v => v != null);
+        if (vals.length === 3 && vals.every(v => v === 20)) {
+          return { unlocked: true, progress: 1, target: 1 };
+        }
+      }
+    }
+    return { unlocked: false, progress: 0, target: 1 };
+  }
+  if (ach.type === 'quizPerfect') {
+    const n = data.perfectQuizCount || 0;
+    return { unlocked: n >= ach.target, progress: Math.min(n, ach.target), target: ach.target };
+  }
+  if (ach.type === 'rxPlan') {
+    for (const malId in list) {
+      const a = list[malId];
+      if (a.status !== 'planToWatch') continue;
+      const info = getRatingInfo(a.rating);
+      if (info && info.tier === 'extreme') return { unlocked: true, progress: 1, target: 1 };
+    }
+    return { unlocked: false, progress: 0, target: 1 };
+  }
   return { unlocked: false, progress: 0, target: 1 };
+}
+
+// ── LOGIN STREAK COMPUTATION ──
+function computeLoginStreak(loginDays) {
+  if (!loginDays || !loginDays.length) return 0;
+  const sorted = [...new Set(loginDays)].sort();
+  // Walk back from the most recent day
+  let streak = 1;
+  for (let i = sorted.length - 1; i > 0; i--) {
+    const a = new Date(sorted[i]);
+    const b = new Date(sorted[i - 1]);
+    const diff = Math.round((a - b) / (1000 * 60 * 60 * 24));
+    if (diff === 1) streak++;
+    else break;
+  }
+  // Streak only valid if last login was today or yesterday
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date(todayStr);
+  const lastDay = new Date(sorted[sorted.length - 1]);
+  const sinceLast = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
+  if (sinceLast > 1) return 0;
+  return streak;
+}
+
+function recordLoginDay() {
+  if (!currentUser) return;
+  const data = getUserData(currentUser);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!data.loginDays) data.loginDays = [];
+  if (data.loginDays[data.loginDays.length - 1] !== today) {
+    data.loginDays.push(today);
+    if (data.loginDays.length > 60) data.loginDays = data.loginDays.slice(-60);
+    saveUserData(currentUser, data);
+  }
+}
+
+function markDonateClicked() {
+  if (!currentUser) return;
+  const data = getUserData(currentUser);
+  if (!data.donated) {
+    data.donated = true;
+    saveUserData(currentUser, data);
+    showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(a => a.key === 'donateur'))} !`);
+  }
 }
 
 // Detect a tier upgrade and trigger the unlock animation
@@ -320,17 +437,38 @@ const LANG = {
     achievements_sub: 'Badges et succès débloqués selon ce que tu as regardé',
     your_tier: 'Ton palier actuel', special_achievements: 'Succès spéciaux',
     locked: 'Verrouillé', unlocked: 'Débloqué',
-    podium_title:'Podium des séries', no_top_yet:'Classe des séries dans ton Top 10 pour voir le podium ici.',
-    hide_nsfw:'Masquer le contenu sensible (Rx)',
-    data_section:'Sauvegarde des données',
-    data_msg:'Migre tes données entre appareils ou fais une copie de sauvegarde.',
-    export_btn:'📤 Exporter mes données',
-    import_btn:'📥 Importer une sauvegarde',
-    import_link_auth:'📥 Importer une sauvegarde existante',
-    import_success:'Import réussi',
-    import_error:'Fichier invalide ou corrompu',
-    export_done:'Sauvegarde téléchargée',
-    confirm_import:'Importer écrasera les comptes existants portant le même identifiant. Continuer ?',
+    hidden_ach: 'Achievement caché', hidden_ach_hint: 'Continue à explorer pour le découvrir…',
+    quiz:'Quizz', quiz_title:'Quizz',
+    quiz_sub:'Teste tes connaissances sur tes animés ⭐ favoris',
+    quiz_select:'Choisis un animé pour lancer un quizz',
+    quiz_no_fav:'Marque d\'abord des animés en ⭐ favori. Quizz disponibles pour : One Piece, Naruto, Bleach, Dragon Ball Z, Monster, Steins;Gate, Hunter x Hunter, Attack on Titan, FMA Brotherhood, Jujutsu Kaisen.',
+    quiz_q_count:'questions', quiz_start:'Commencer',
+    quiz_question:'Question', quiz_score:'Score',
+    quiz_next:'Suivant', quiz_finish:'Voir le résultat',
+    quiz_correct:'Bonne réponse !', quiz_wrong:'Mauvaise réponse',
+    quiz_lore:'📖 Lore', quiz_complete:'Quizz terminé !',
+    quiz_your_score:'Ton score', quiz_review:'Tes erreurs',
+    quiz_perfect_msg:'Score parfait ! 🎉', quiz_zero_msg:'Aïe… 0/10 !',
+    quiz_retry:'Refaire', quiz_back:'Choisir un autre animé',
+    quiz_you_picked:'Ta réponse', quiz_correct_was:'Bonne réponse',
+    quiz_difficulty:'Difficulté', quiz_diff_1:'Facile', quiz_diff_2:'Moyen', quiz_diff_3:'Difficile',
+    quiz_no_questions:'Pas de questions à ce niveau pour le moment.',
+    install_title:'Installe Track Deez sur ton iPhone',
+    install_msg:'Profite de l\'app en plein écran, sans la barre Safari, comme une vraie app.',
+    install_step_1:'Appuie sur', install_step_1b:'en bas de Safari',
+    install_step_2:'Choisis « Sur l\'écran d\'accueil »',
+    install_step_3:'Tape « Ajouter » en haut à droite',
+    podium_title: 'Podium des séries', no_top_yet: 'Classe des séries dans ton Top 10 pour voir le podium ici.',
+    hide_nsfw: 'Masquer le contenu sensible (Rx)',
+    data_section: 'Sauvegarde des données',
+    data_msg: 'Migre tes données entre appareils ou fais une copie de sauvegarde.',
+    export_btn: '📤 Exporter mes données',
+    import_btn: '📥 Importer une sauvegarde',
+    import_link_auth: '📥 Importer une sauvegarde existante',
+    import_success: 'Import réussi',
+    import_error: 'Fichier invalide ou corrompu',
+    export_done: 'Sauvegarde téléchargée',
+    confirm_import: 'Importer écrasera les comptes existants portant le même identifiant. Continuer ?',
     // Sort & filters
     sort_by: 'Trier', sort_recent: 'Récent', sort_alpha: 'A → Z',
     sort_alpha_rev: 'Z → A', sort_score_desc: 'Note ↓', sort_score_asc: 'Note ↑',
@@ -448,17 +586,39 @@ const LANG = {
     achievements: 'Achievements', achievements_title: 'Achievements',
     achievements_sub: 'Badges and milestones unlocked based on what you watched',
     your_tier: 'Your current tier', special_achievements: 'Special achievements',
-    podium_title:'Series podium', no_top_yet:'Rank some series in your Top 10 to see the podium here.',
-    hide_nsfw:'Hide sensitive content (Rx)',
-    data_section:'Data backup',
-    data_msg:'Migrate your data between devices or back it up.',
-    export_btn:'📤 Export my data',
-    import_btn:'📥 Import a backup',
-    import_link_auth:'📥 Import an existing backup',
-    import_success:'Import successful',
-    import_error:'Invalid or corrupt file',
-    export_done:'Backup downloaded',
-    confirm_import:'Importing will overwrite existing accounts with the same identifier. Continue?',
+    locked: 'Locked', unlocked: 'Unlocked',
+    hidden_ach: 'Hidden achievement', hidden_ach_hint: 'Keep exploring to discover it…',
+    quiz:'Quiz', quiz_title:'Quiz',
+    quiz_sub:'Test your knowledge on your ⭐ favorited anime',
+    quiz_select:'Pick an anime to start a quiz',
+    quiz_no_fav:'Favorite some anime first. Quizzes available for: One Piece, Naruto, Bleach, Dragon Ball Z, Monster, Steins;Gate, Hunter x Hunter, Attack on Titan, FMA Brotherhood, Jujutsu Kaisen.',
+    quiz_q_count:'questions', quiz_start:'Start',
+    quiz_question:'Question', quiz_score:'Score',
+    quiz_next:'Next', quiz_finish:'See result',
+    quiz_correct:'Correct!', quiz_wrong:'Wrong',
+    quiz_lore:'📖 Lore', quiz_complete:'Quiz complete!',
+    quiz_your_score:'Your score', quiz_review:'Your mistakes',
+    quiz_perfect_msg:'Perfect score! 🎉', quiz_zero_msg:'Ouch… 0/10!',
+    quiz_retry:'Retry', quiz_back:'Pick another anime',
+    quiz_you_picked:'Your answer', quiz_correct_was:'Correct answer',
+    quiz_difficulty:'Difficulty', quiz_diff_1:'Easy', quiz_diff_2:'Medium', quiz_diff_3:'Hard',
+    quiz_no_questions:'No questions at this level yet.',
+    install_title:'Install Track Deez on your iPhone',
+    install_msg:'Enjoy the app full-screen without Safari\'s bars, like a real native app.',
+    install_step_1:'Tap', install_step_1b:'at the bottom of Safari',
+    install_step_2:'Choose "Add to Home Screen"',
+    install_step_3:'Tap "Add" in the top-right corner',
+    podium_title: 'Series podium', no_top_yet: 'Rank some series in your Top 10 to see the podium here.',
+    hide_nsfw: 'Hide sensitive content (Rx)',
+    data_section: 'Data backup',
+    data_msg: 'Migrate your data between devices or back it up.',
+    export_btn: '📤 Export my data',
+    import_btn: '📥 Import a backup',
+    import_link_auth: '📥 Import an existing backup',
+    import_success: 'Import successful',
+    import_error: 'Invalid or corrupt file',
+    export_done: 'Backup downloaded',
+    confirm_import: 'Importing will overwrite existing accounts with the same identifier. Continue?',
     locked: 'Locked', unlocked: 'Unlocked',
     // Sort & filters
     sort_by: 'Sort', sort_recent: 'Recent', sort_alpha: 'A → Z',
@@ -501,7 +661,9 @@ function applyLang() {
   if (currentView === 'list') renderListView();
   if (currentView === 'search') refreshSearchCards();
   if (currentView === 'favorites') renderFavorites();
+  if (currentView === 'quizz') renderQuizView();
   if (currentView === 'top10') renderTop10();
+  if (currentView === 'achievements') renderAchievements();
   if (currentView === 'discover') { showDiscoverCard(); renderDiscoverStats(); renderDiscoverRecos(); }
 }
 
@@ -543,6 +705,306 @@ function extractTrailerId(t) {
   }
   return null;
 }
+
+// ══ QUIZ BANK ═════════════════════════════════════
+// Question format: { q (FR), qe (EN), c [4 choices], ans (correct idx), l (FR lore), le (EN lore) }
+// Choices share same array for both langs (mostly proper nouns).
+const QUIZ_BANK = {
+  21: { // One Piece
+    title: 'One Piece', image: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg',
+    questions: [
+      { q:'Quel personnage maîtrise le pouvoir du caoutchouc ?', qe:'Which character masters the rubber power?', c:['Roronoa Zoro','Monkey D. Luffy','Sanji','Nami'], ans:1, l:'Luffy a mangé le Gomu Gomu no Mi (fruit du caoutchouc), qui rend tout son corps élastique.', le:'Luffy ate the Gomu Gomu no Mi (Gum-Gum Fruit), making his entire body elastic.' },
+      { q:'Qui a donné son chapeau de paille à Luffy ?', qe:'Who gave Luffy his straw hat?', c:['Gol D. Roger','Shanks','Garp','Whitebeard'], ans:1, l:'Shanks le Roux confie son chapeau à Luffy enfant, en lui faisant promettre de le lui rendre devenu grand pirate.', le:'Red-Haired Shanks lent the hat to a young Luffy, asking him to return it once he became a great pirate.' },
+      { q:'Quel est le nom du frère de Luffy mort à Marineford ?', qe:'What is the name of Luffy\'s brother who died at Marineford?', c:['Sabo','Portgas D. Ace','Marco','Edward Newgate'], ans:1, l:'Ace, fils de Gol D. Roger et possesseur du Mera Mera no Mi, est tué par Akainu en protégeant Luffy.', le:'Ace, son of Gol D. Roger and user of the Mera Mera no Mi, was killed by Akainu while protecting Luffy.' },
+      { q:'Quel style de combat utilise Roronoa Zoro ?', qe:'What fighting style does Roronoa Zoro use?', c:['Ittōryū','Nitōryū','Santōryū','Yontōryū'], ans:2, l:'Zoro utilise le Santōryū (style à 3 sabres) — un dans chaque main et un dans la bouche.', le:'Zoro uses Santōryū (Three-Sword Style): one in each hand and one in his mouth.' },
+      { q:'Quel fruit du démon possède Barbe Blanche ?', qe:'Which Devil Fruit does Whitebeard wield?', c:['Magu Magu no Mi','Gura Gura no Mi','Yami Yami no Mi','Ope Ope no Mi'], ans:1, l:'Le Gura Gura no Mi (fruit des tremblements) lui permet de fissurer l\'air et provoquer des séismes.', le:'The Gura Gura no Mi (Tremor-Tremor Fruit) lets him crack the air and cause earthquakes.' },
+      { q:'Qui est le capitaine des Heart Pirates ?', qe:'Who captains the Heart Pirates?', c:['Eustass Kid','Trafalgar D. Water Law','X Drake','Basil Hawkins'], ans:1, l:'Law, possesseur du Ope Ope no Mi, devient l\'allié clé de Luffy à partir de Punk Hazard.', le:'Law, holder of the Ope Ope no Mi, becomes a key ally of Luffy starting from Punk Hazard.' },
+      { q:'Quel personnage est un médecin renne ?', qe:'Which crew member is a reindeer doctor?', c:['Chopper','Brook','Franky','Usopp'], ans:0, l:'Tony Tony Chopper a mangé le Hito Hito no Mi (fruit humain) : c\'est un renne qui peut prendre forme humaine.', le:'Tony Tony Chopper ate the Hito Hito no Mi (Human-Human Fruit): a reindeer that can take human form.' },
+      { q:'Quel est le nom du village de Luffy ?', qe:'What is the name of Luffy\'s home village?', c:['Foosha','Syrup','Cocoyashi','Loguetown'], ans:0, l:'Luffy a grandi à Foosha Village, où il a rencontré Shanks et Makino.', le:'Luffy grew up in Foosha Village, where he met Shanks and Makino.' },
+    ],
+  },
+  20: { // Naruto
+    title: 'Naruto', image: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
+    questions: [
+      { q:'Quelle technique signature utilise Naruto ?', qe:'What is Naruto\'s signature jutsu?', c:['Chidori','Rasengan','Kage Bunshin','Amaterasu'], ans:1, l:'Le Rasengan a été créé par Minato (4e Hokage), le père de Naruto. Naruto le perfectionne ensuite avec le chakra Vent.', le:'The Rasengan was created by Minato (4th Hokage), Naruto\'s father. Naruto later refines it with Wind chakra.' },
+      { q:'Comment s\'appelle le père de Naruto ?', qe:'What is the name of Naruto\'s father?', c:['Hiruzen Sarutobi','Jiraiya','Minato Namikaze','Hashirama Senju'], ans:2, l:'Minato Namikaze, le 4e Hokage surnommé "Éclair Jaune de Konoha", a scellé Kyuubi dans Naruto au prix de sa vie.', le:'Minato Namikaze, the 4th Hokage known as the "Yellow Flash of Konoha", sealed Kurama into Naruto at the cost of his life.' },
+      { q:'Qui a massacré le clan Uchiha ?', qe:'Who massacred the Uchiha clan?', c:['Madara Uchiha','Itachi Uchiha','Obito Uchiha','Danzō'], ans:1, l:'Itachi a tué tout le clan sur ordre du Conseil de Konoha pour empêcher un coup d\'état, épargnant son frère Sasuke.', le:'Itachi killed the entire clan under orders from Konoha\'s Council to prevent a coup, sparing his brother Sasuke.' },
+      { q:'Quel élément maîtrise principalement Gaara ?', qe:'Which element does Gaara primarily wield?', c:['Le feu','L\'eau','Le sable','La foudre'], ans:2, l:'Gaara contrôle le sable grâce au démon Shukaku (Ichibi) scellé en lui dès sa naissance.', le:'Gaara controls sand through the Shukaku (One-Tails) sealed inside him since birth.' },
+      { q:'Quelle est la technique signature de Kakashi ?', qe:'What is Kakashi\'s signature technique?', c:['Rasengan','Chidori','Susanoo','Kamui'], ans:1, l:'Le Chidori (mille oiseaux) a été créé par Kakashi, qui l\'a ensuite enseigné à Sasuke.', le:'The Chidori (Thousand Birds) was created by Kakashi, who later taught it to Sasuke.' },
+      { q:'Qui est le maître de Sakura ?', qe:'Who is Sakura\'s mentor?', c:['Tsunade','Shizune','Hiruzen','Jiraiya'], ans:0, l:'Tsunade, 5e Hokage et l\'une des trois Sannin, forme Sakura en médecine ninja.', le:'Tsunade, the 5th Hokage and one of the Three Sannin, trains Sakura in medical ninjutsu.' },
+      { q:'Combien de Hokage y a-t-il eu avant Naruto ?', qe:'How many Hokage came before Naruto?', c:['4','5','6','7'], ans:2, l:'Hashirama (1er), Tobirama (2e), Hiruzen (3e), Minato (4e), Tsunade (5e), Kakashi (6e). Naruto devient le 7e.', le:'Hashirama (1st), Tobirama (2nd), Hiruzen (3rd), Minato (4th), Tsunade (5th), Kakashi (6th). Naruto becomes the 7th.' },
+      { q:'Quel doujutsu possède Sasuke ?', qe:'Which dōjutsu does Sasuke have?', c:['Byakugan','Sharingan','Rinnegan','Tenseigan'], ans:1, l:'Sasuke éveille son Sharingan contre Haku, puis évolue vers le Mangekyō Sharingan, le Mangekyō Eternal et finalement le Rinnegan.', le:'Sasuke awakens his Sharingan against Haku, later evolving to Mangekyō, Eternal Mangekyō, and ultimately the Rinnegan.' },
+    ],
+  },
+  269: { // Bleach
+    title: 'Bleach', image: 'https://cdn.myanimelist.net/images/anime/3/40451.jpg',
+    questions: [
+      { q:'Quel est le nom du Zanpakutō d\'Ichigo ?', qe:'What is the name of Ichigo\'s Zanpakutō?', c:['Sode no Shirayuki','Zangetsu','Senbonzakura','Hyōrinmaru'], ans:1, l:'Zangetsu (lune-coupant) reflète la dualité Shinigami/Hollow d\'Ichigo : son esprit Quincy se révèle plus tard être le vrai Zangetsu.', le:'Zangetsu (Slaying Moon) reflects Ichigo\'s Shinigami/Hollow duality; his Quincy spirit is later revealed to be the true Zangetsu.' },
+      { q:'Qui est le père d\'Ichigo Kurosaki ?', qe:'Who is Ichigo\'s father?', c:['Isshin Kurosaki','Ryūken Ishida','Kisuke Urahara','Sōsuke Aizen'], ans:0, l:'Isshin était l\'ancien capitaine de la 10e division. Il a quitté la Soul Society par amour pour Masaki.', le:'Isshin was the former captain of the 10th Division. He left Soul Society out of love for Masaki.' },
+      { q:'Quel artefact Aizen veut-il pour devenir un dieu ?', qe:'Which artifact does Aizen seek to become a god?', c:['Hōgyoku','Sōkyoku','Senkaimon','Garganta'], ans:0, l:'Le Hōgyoku, créé par Urahara, brise la barrière entre Hollows et Shinigami et amplifie les pouvoirs.', le:'The Hōgyoku, created by Urahara, dissolves the boundary between Hollows and Shinigami and amplifies powers.' },
+      { q:'De quel élément est le Zanpakutō de Tōshirō Hitsugaya ?', qe:'What element is Hitsugaya\'s Zanpakutō?', c:['Feu','Glace','Foudre','Vent'], ans:1, l:'Hyōrinmaru est le plus puissant Zanpakutō de glace de la Soul Society. Hitsugaya devient capitaine de la 10e division.', le:'Hyōrinmaru is the most powerful ice-type Zanpakutō in Soul Society. Hitsugaya becomes captain of the 10th Division.' },
+      { q:'Qui dirige la 1ère division du Gotei 13 ?', qe:'Who captains the 1st Division of the Gotei 13?', c:['Byakuya Kuchiki','Genryūsai Yamamoto','Jūshirō Ukitake','Kenpachi Zaraki'], ans:1, l:'Yamamoto, le Capitaine-Commandant, manie Ryūjin Jakka, le plus ancien et puissant Zanpakutō de feu.', le:'Yamamoto, the Captain-Commander, wields Ryūjin Jakka, the oldest and most powerful fire-type Zanpakutō.' },
+      { q:'Comment s\'appelle le Bankai de Renji ?', qe:'What is the name of Renji\'s Bankai?', c:['Senbonzakura Kageyoshi','Hihiō Zabimaru','Tensa Zangetsu','Daiguren Hyōrinmaru'], ans:1, l:'Hihiō Zabimaru transforme son Zanpakutō en serpent-babouin géant articulé contrôlable.', le:'Hihiō Zabimaru transforms his Zanpakutō into a massive segmented snake-baboon under his control.' },
+      { q:'Qui est le frère adoptif de Rukia ?', qe:'Who is Rukia\'s adoptive brother?', c:['Renji Abarai','Kaien Shiba','Byakuya Kuchiki','Gin Ichimaru'], ans:2, l:'Byakuya, capitaine de la 6e division, a adopté Rukia pour respecter la dernière volonté de sa femme défunte Hisana.', le:'Byakuya, captain of the 6th Division, adopted Rukia to honor the dying wish of his late wife Hisana.' },
+      { q:'Combien de divisions compte le Gotei 13 ?', qe:'How many Divisions does the Gotei 13 have?', c:['10','12','13','15'], ans:2, l:'Le Gotei 13 (les "13 Cours de Garde") regroupe 13 divisions, chacune dirigée par un capitaine.', le:'The Gotei 13 ("13 Court Guard Squads") is made up of 13 divisions, each led by a captain.' },
+    ],
+  },
+  813: { // Dragon Ball Z
+    title: 'Dragon Ball Z', image: 'https://cdn.myanimelist.net/images/anime/1607/117271.jpg',
+    questions: [
+      { q:'Quelle est l\'attaque signature de Goku ?', qe:'What is Goku\'s signature attack?', c:['Final Flash','Kamehameha','Galick Gun','Special Beam Cannon'], ans:1, l:'Le Kamehameha a été créé par Maître Roshi. Goku l\'apprend très jeune et le perfectionne au fil de ses combats.', le:'The Kamehameha was created by Master Roshi. Goku learns it very young and refines it through countless battles.' },
+      { q:'Quel est le nom Saiyan de Goku ?', qe:'What is Goku\'s Saiyan name?', c:['Bardock','Kakarot','Raditz','Turles'], ans:1, l:'Kakarot, fils de Bardock, a été envoyé sur Terre comme bébé pour la conquérir avant l\'extermination des Saiyans.', le:'Kakarot, son of Bardock, was sent to Earth as a baby to conquer it before the Saiyans\' extinction.' },
+      { q:'Quels androïdes Cell absorbe-t-il pour devenir parfait ?', qe:'Which androids does Cell absorb to reach Perfect form?', c:['16 et 17','17 et 18','18 et 19','17 et 20'], ans:1, l:'Cell, créé par le Dr Gero, doit absorber les androïdes C-17 et C-18 pour atteindre sa forme parfaite et organiser le Cell Game.', le:'Cell, created by Dr. Gero, must absorb androids 17 and 18 to reach Perfect form and host the Cell Games.' },
+      { q:'Combien de formes possède Freezer ?', qe:'How many forms does Frieza have?', c:['3','4','5','6'], ans:1, l:'Freezer a 4 formes connues à l\'origine. Plus tard, il développe Golden Freezer puis Black Freezer.', le:'Frieza originally has 4 known forms. Later he develops Golden Frieza and Black Frieza.' },
+      { q:'De quelle planète vient Piccolo ?', qe:'Which planet is Piccolo from?', c:['Vegeta','Namek','Yardrat','Kanassa'], ans:1, l:'Piccolo et Kami sont des Nameks. Kami a séparé sa partie maléfique pour devenir gardien de la Terre.', le:'Piccolo and Kami are Namekians. Kami separated his evil half to become Earth\'s guardian.' },
+      { q:'Qui est le fils de Vegeta dans la chronologie de Trunks du futur ?', qe:'Who is Vegeta\'s son in Future Trunks\' timeline?', c:['Goten','Trunks','Tarble','Bra'], ans:1, l:'Trunks, fils de Vegeta et Bulma, voyage du futur pour avertir les héros au sujet des androïdes.', le:'Trunks, son of Vegeta and Bulma, travels from the future to warn the heroes about the androids.' },
+      { q:'Comment Goku atteint-il pour la première fois Super Saiyan ?', qe:'How does Goku first turn Super Saiyan?', c:['Contre Vegeta','Contre Freezer sur Namek','Contre Cell','Lors d\'un entraînement'], ans:1, l:'Goku se transforme la première fois en SSJ contre Freezer sur Namek, après la mort de Krilin.', le:'Goku first transforms into SSJ against Frieza on Namek, after Krillin\'s death.' },
+      { q:'Quel est le rang de Vegeta avant son arrivée sur Terre ?', qe:'What is Vegeta\'s rank before arriving on Earth?', c:['Soldat','Élite','Prince','Roi'], ans:2, l:'Vegeta est le Prince des Saiyans, fils du Roi Vegeta, et un guerrier d\'élite au service de Freezer.', le:'Vegeta is the Prince of all Saiyans, son of King Vegeta, and an elite warrior serving Frieza.' },
+    ],
+  },
+  19: { // Monster
+    title: 'Monster', image: 'https://cdn.myanimelist.net/images/anime/10/18793.jpg',
+    questions: [
+      { q:'Quelle est la profession du Dr Tenma ?', qe:'What is Dr. Tenma\'s profession?', c:['Cardiologue','Neurochirurgien','Psychiatre','Pédiatre'], ans:1, l:'Le Dr Kenzō Tenma est neurochirurgien à l\'hôpital Eisler Memorial à Düsseldorf.', le:'Dr. Kenzō Tenma is a neurosurgeon at the Eisler Memorial Hospital in Düsseldorf.' },
+      { q:'Comment s\'appelle l\'antagoniste principal ?', qe:'What is the name of the main antagonist?', c:['Hans Liebert','Johan Liebert','Anton Liebert','Friedrich Liebert'], ans:1, l:'Johan Liebert est l\'enfant que Tenma a sauvé en début de série. Il devient un tueur en série calme et terrifiant.', le:'Johan Liebert is the child Tenma saved at the start of the series. He becomes a calm and terrifying serial killer.' },
+      { q:'Comment s\'appelle la sœur jumelle de Johan ?', qe:'What is the name of Johan\'s twin sister?', c:['Eva Heinemann','Anna Liebert (Nina Fortner)','Lotte Frank','Karin Lipsky'], ans:1, l:'Anna, élevée plus tard sous le nom de Nina Fortner, est la jumelle de Johan et un personnage central de l\'histoire.', le:'Anna, later raised as Nina Fortner, is Johan\'s twin sister and a central character of the story.' },
+      { q:'Quel inspecteur traque Tenma à travers l\'Europe ?', qe:'Which inspector hunts Tenma across Europe?', c:['Heinrich Lunge','Wolfgang Grimmer','Eisler','Verdemann'], ans:0, l:'L\'inspecteur Heinrich Lunge est obsédé par Tenma qu\'il croit coupable, et utilise une mémoire photographique remarquable.', le:'Inspector Heinrich Lunge is obsessed with Tenma — whom he believes guilty — and relies on his remarkable photographic memory.' },
+      { q:'Où se déroulent les expériences sur les enfants ?', qe:'Where were the experiments on children conducted?', c:['Kinderheim 511','Schloss Berg','Roter Rosen','Heineman Institute'], ans:0, l:'Kinderheim 511 était un orphelinat est-allemand où des expériences psychologiques étaient menées pendant la Guerre Froide.', le:'Kinderheim 511 was an East German orphanage that ran psychological experiments during the Cold War.' },
+      { q:'Dans quelle ville se déroule le climax final ?', qe:'In which town does the final climax take place?', c:['Munich','Prague','Ruhenheim','Vienne'], ans:2, l:'Ruhenheim, petite ville isolée, devient le théâtre du plan final de Johan visant à recréer un "suicide parfait".', le:'Ruhenheim, an isolated small town, becomes the stage for Johan\'s final plan to recreate a "perfect suicide".' },
+      { q:'Comment s\'appelle l\'ex-fiancée de Tenma ?', qe:'What is the name of Tenma\'s ex-fiancée?', c:['Eva Heinemann','Karin Lipsky','Margot Langer','Maria'], ans:0, l:'Eva Heinemann, fille du directeur Heinemann, rompt avec Tenma au début et sombre dans l\'alcoolisme avant de l\'aider plus tard.', le:'Eva Heinemann, daughter of director Heinemann, breaks up with Tenma at the start and falls into alcoholism before helping him later.' },
+      { q:'Quel livre déclenche les souvenirs traumatiques chez Johan ?', qe:'Which picture book triggers Johan\'s traumatic memories?', c:['Le Chat sans nom','Le Monstre sans nom','La Forêt qui pleure','La Maison rouge'], ans:1, l:'"Le Monstre sans nom" est un livre pour enfants tchèque qui sert de métaphore à l\'identité absorbée par Johan et à la fluidité du mal.', le:'"The Nameless Monster" is a Czech children\'s book that serves as a metaphor for Johan\'s absorbed identity and the fluid nature of evil.' },
+    ],
+  },
+  9253: { // Steins;Gate
+    title: 'Steins;Gate', image: 'https://cdn.myanimelist.net/images/anime/5/73199.jpg',
+    questions: [
+      { q:'Quel pseudo Okabe se donne-t-il ?', qe:'What alias does Okabe give himself?', c:['Hououin Kyouma','Mad Scientist','Daru Hashida','John Titor'], ans:0, l:'Okabe Rintarō se proclame Hououin Kyouma, "scientifique fou" qui combat une organisation imaginaire à laquelle il finit par croire.', le:'Okabe Rintarō calls himself Hououin Kyouma, the "mad scientist" fighting an imaginary organization he eventually starts believing in.' },
+      { q:'Quel objet sert de machine à voyager dans le temps ?', qe:'Which device works as a time machine?', c:['Une montre','Un micro-ondes','Un téléphone à clapet','Un IBN 5100'], ans:1, l:'Le PhoneWave, micro-ondes connecté à un téléphone, envoie des "D-Mails" (textos courts) dans le passé.', le:'The PhoneWave — a microwave hooked to a phone — sends "D-Mails" (short text messages) into the past.' },
+      { q:'Quel est le vrai nom de Christina ?', qe:'What is Christina\'s real name?', c:['Mayuri Shiina','Suzuha Amane','Kurisu Makise','Faris NyanNyan'], ans:2, l:'Kurisu Makise, brillante chercheuse en neurosciences à seulement 18 ans, déteste être appelée "Christina" par Okabe.', le:'Kurisu Makise, a brilliant neuroscience researcher at just 18, hates being called "Christina" by Okabe.' },
+      { q:'Quelle organisation traque les voyageurs temporels ?', qe:'Which organization hunts the time travelers?', c:['CERN','SERN','NASA','MAGES'], ans:1, l:'SERN (déformation de "CERN") cherche à monopoliser la technologie du voyage dans le temps pour instaurer une dystopie.', le:'SERN (a play on "CERN") seeks to monopolize time travel technology to enforce a dystopian future.' },
+      { q:'Quelle est la phrase fétiche de Mayuri ?', qe:'What is Mayuri\'s catchphrase?', c:['El Psy Congroo','Tutturu~','Stand by, ready','Hyaa~ha'], ans:1, l:'"Tutturu~" est le salut musical de Mayuri Shiina, l\'amie d\'enfance d\'Okabe.', le:'"Tutturu~" is the singsong greeting of Mayuri Shiina, Okabe\'s childhood friend.' },
+      { q:'Comment se nomme la ligne temporelle finale ?', qe:'What is the name of the final timeline?', c:['Alpha','Beta','Steins Gate','Omega'], ans:2, l:'La ligne Steins Gate (>1% de divergence) permet de sauver à la fois Mayuri et Kurisu, échappant aux dystopies SERN et 3e Guerre Mondiale.', le:'The Steins Gate line (>1% divergence) lets Okabe save both Mayuri and Kurisu, escaping the SERN dystopia and WW3 timelines.' },
+      { q:'Comment s\'appelle le chercheur "John Titor" en réalité ?', qe:'Who is "John Titor" in reality?', c:['Daru','Suzuha Amane','Moeka','Faris'], ans:1, l:'Suzuha Amane vient du futur (2036) sous l\'identité de John Titor pour empêcher la dystopie de SERN.', le:'Suzuha Amane comes from the future (2036) under the John Titor identity to prevent SERN\'s dystopia.' },
+      { q:'Quel ordinateur antique est crucial à l\'intrigue ?', qe:'Which vintage computer is crucial to the plot?', c:['Apple Lisa','IBN 5100','Commodore 64','PDP-11'], ans:1, l:'L\'IBN 5100 (parodie de l\'IBM 5100) est requis pour décrypter les serveurs de SERN et changer la ligne temporelle.', le:'The IBN 5100 (a parody of the IBM 5100) is needed to decrypt SERN\'s servers and shift the timeline.' },
+    ],
+  },
+  11061: { // HxH 2011
+    title: 'Hunter x Hunter', image: 'https://cdn.myanimelist.net/images/anime/11/33657.jpg',
+    questions: [
+      { q:'Quel type de Nen utilise Gon ?', qe:'What Nen category does Gon use?', c:['Manipulation','Renforcement','Spécialisation','Émission'], ans:1, l:'Gon est un Renforceur (Enhancer). Sa nature directe et obstinée correspond parfaitement à cette catégorie.', le:'Gon is an Enhancer. His straightforward and stubborn personality fits the category perfectly.' },
+      { q:'Quel est le nom de famille de Killua ?', qe:'What is Killua\'s family name?', c:['Phantom','Zoldyck','Freecss','Morow'], ans:1, l:'La famille Zoldyck est une lignée d\'assassins légendaires vivant sur la Montagne Kukuroo.', le:'The Zoldyck family is a legendary lineage of assassins living atop Kukuroo Mountain.' },
+      { q:'Quel type de Nen utilise Hisoka ?', qe:'Which Nen category does Hisoka use?', c:['Renforcement','Manipulation','Transformation','Émission'], ans:2, l:'Hisoka est un Transformer (Transmuter). Son Bungee Gum a "les propriétés du chewing-gum et du caoutchouc".', le:'Hisoka is a Transmuter. His Bungee Gum has "the properties of both rubber and gum".' },
+      { q:'Qui est le père de Gon ?', qe:'Who is Gon\'s father?', c:['Ging Freecss','Kite','Wing','Netero'], ans:0, l:'Ging est l\'un des Hunters les plus accomplis et un Triple Star. Sa quête finale donne son sens au voyage de Gon.', le:'Ging is one of the most accomplished Hunters and a Triple Star. His ultimate quest gives meaning to Gon\'s journey.' },
+      { q:'Comment s\'appelle le roi des Chimera Ants ?', qe:'What is the name of the Chimera Ant King?', c:['Pitou','Pouf','Meruem','Youpi'], ans:2, l:'Meruem est le roi né dans la chair, surpuissant dès la naissance, et progressivement humanisé par sa relation avec Komugi.', le:'Meruem is the King born from flesh, overwhelmingly powerful from birth, and gradually humanized by his bond with Komugi.' },
+      { q:'Contre qui Kurapika cherche-t-il vengeance ?', qe:'Whom does Kurapika seek revenge against?', c:['Les Hunters','La Brigade Fantôme','Les Zoldyck','Les Chimera Ants'], ans:1, l:'La Brigade Fantôme (Genei Ryodan) a massacré son clan Kurta et volé leurs yeux écarlates uniques.', le:'The Phantom Troupe (Genei Ryodan) massacred his Kurta clan and stole their unique scarlet eyes.' },
+      { q:'Quel est le pouvoir de Kurapika contre la Brigade ?', qe:'What is Kurapika\'s power against the Troupe?', c:['Renforcement','Spécialisation (5 doigts)','Émission pure','Manipulation des ombres'], ans:1, l:'Ses Cinq Chaînes Judiciaires fonctionnent grâce à un serment qui le tue s\'il les utilise sur quelqu\'un d\'autre que la Brigade.', le:'His Five Judgment Chains rely on a vow that kills him if used against anyone but the Troupe.' },
+      { q:'Comment s\'appelle la sœur/frère cadet de Killua ?', qe:'Who is Killua\'s younger sibling?', c:['Illumi','Milluki','Alluka','Kalluto'], ans:2, l:'Alluka possède Nanika, une entité qui exauce les vœux à condition d\'effectuer trois requêtes croissantes au préalable.', le:'Alluka houses Nanika, an entity that grants wishes if three escalating requests are fulfilled first.' },
+    ],
+  },
+  16498: { // AoT
+    title: 'Attack on Titan', image: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg',
+    questions: [
+      { q:'Quel mur est détruit en premier dans la série ?', qe:'Which wall is breached first in the series?', c:['Maria','Rose','Sina','Trost'], ans:0, l:'Le Titan Colossal et le Titan Cuirassé brisent Wall Maria, forçant l\'humanité à se réfugier derrière Wall Rose.', le:'The Colossal and Armored Titans breach Wall Maria, forcing humanity to retreat behind Wall Rose.' },
+      { q:'Qui se révèle être le Titan Cuirassé ?', qe:'Who is revealed to be the Armored Titan?', c:['Bertholdt','Reiner','Annie','Zeke'], ans:1, l:'Reiner Braun, originaire de Marley, est un Titan Guerrier ayant infiltré le bataillon d\'Eldia comme cadet.', le:'Reiner Braun, from Marley, is a Warrior Titan who infiltrated the Eldian regiment as a cadet.' },
+      { q:'De quel clan descend Mikasa ?', qe:'From which clan does Mikasa descend?', c:['Reiss','Tybur','Ackerman','Yeager'], ans:2, l:'Le clan Ackerman possède une force surhumaine et une résistance aux pouvoirs du Titan Originel.', le:'The Ackerman clan has superhuman strength and resistance to the Founding Titan\'s influence.' },
+      { q:'Comment s\'appelle le père d\'Eren ?', qe:'What is the name of Eren\'s father?', c:['Grisha Yeager','Rod Reiss','Willy Tybur','Kenny Ackerman'], ans:0, l:'Grisha Yeager, Eldien exilé à Marley, devient médecin à Shiganshina et hérite du Titan Originel avant de le transmettre à Eren.', le:'Grisha Yeager, an Eldian exiled to Marley, becomes a doctor in Shiganshina and inherits the Founding Titan before passing it to Eren.' },
+      { q:'Qui est le caporal-chef du Bataillon d\'Exploration ?', qe:'Who is the Survey Corps Captain?', c:['Erwin Smith','Mike Zacharias','Levi Ackerman','Hange Zoë'], ans:2, l:'Levi est considéré comme le soldat le plus fort de l\'humanité, manie le double-épée et est un Ackerman.', le:'Levi is regarded as humanity\'s strongest soldier, wields dual blades, and is an Ackerman.' },
+      { q:'Combien y a-t-il de Titans Primordiaux/Capacités au total ?', qe:'How many primary Titan powers exist in total?', c:['7','9','11','13'], ans:1, l:'Il existe 9 Titans, créés par la déesse Ymir Fritz : Originel, Bestial, Mâchoires, Cuirassé, Colossal, Femelle, Charrette, Marteau, Attaquant.', le:'There are 9 Titans, created by the goddess Ymir Fritz: Founding, Beast, Jaw, Armored, Colossal, Female, Cart, Warhammer, Attack.' },
+      { q:'Quel personnage est le Titan Femelle ?', qe:'Which character is the Female Titan?', c:['Ymir','Annie Leonhart','Pieck','Historia'], ans:1, l:'Annie Leonhart, originaire de Marley comme Reiner et Bertholdt, infiltre le bataillon avant d\'être encapsulée dans la cristallisation.', le:'Annie Leonhart, from Marley like Reiner and Bertholdt, infiltrates the regiment before encasing herself in crystal.' },
+      { q:'Quel est le vrai nom d\'Historia ?', qe:'What is Historia\'s real name?', c:['Christa Lenz','Ymir Fritz','Frieda Reiss','Krista Reiss'], ans:0, l:'"Christa Lenz" est l\'identité fausse qu\'Historia Reiss utilise pour cacher sa lignée royale.', le:'"Christa Lenz" is the false identity Historia Reiss uses to hide her royal bloodline.' },
+    ],
+  },
+  5114: { // FMA Brotherhood
+    title: 'Fullmetal Alchemist: Brotherhood', image: 'https://cdn.myanimelist.net/images/anime/1223/96541.jpg',
+    questions: [
+      { q:'Que perd Edward lors de la transmutation humaine ?', qe:'What does Edward lose during the human transmutation?', c:['Bras gauche et jambe droite','Bras droit et jambe gauche','Les deux bras','Les deux jambes'], ans:1, l:'Edward perd son bras droit et sa jambe gauche, remplacés par des automails. Alphonse perd tout son corps, son âme étant scellée dans une armure.', le:'Edward loses his right arm and left leg, replaced by automail. Alphonse loses his entire body, his soul sealed in a suit of armor.' },
+      { q:'Pourquoi les frères Elric ont-ils tenté la transmutation humaine ?', qe:'Why did the Elric brothers attempt human transmutation?', c:['Ressusciter leur père','Ressusciter leur mère','Atteindre la pierre philosophale','Tuer un homonculus'], ans:1, l:'Les frères Elric voulaient ramener leur mère Trisha à la vie, mais ont créé un être déformé qui n\'était pas elle.', le:'The Elric brothers wanted to bring their mother Trisha back to life, but they created a deformed being that wasn\'t her.' },
+      { q:'Quelle est la spécialité alchimique du Colonel Mustang ?', qe:'What is Colonel Mustang\'s alchemical specialty?', c:['Eau','Glace','Feu','Métal'], ans:2, l:'Roy Mustang, l\'Alchimiste de Flamme, utilise des gants spéciaux qui produisent des étincelles, et contrôle l\'oxygène pour générer du feu.', le:'Roy Mustang, the Flame Alchemist, uses special gloves that produce sparks and controls oxygen to ignite flames.' },
+      { q:'Qui est l\'antagoniste principal de Brotherhood ?', qe:'Who is the main antagonist of Brotherhood?', c:['Dante','Father','King Bradley','Pride'], ans:1, l:'Father est le premier homonculus, créé à partir d\'un fragment de Vérité par Hohenheim. Il cherche à devenir un dieu en absorbant Dieu.', le:'Father is the first homunculus, created from a fragment of Truth by Hohenheim. He seeks to become a god by consuming God itself.' },
+      { q:'Quel homonculus est l\'hôte du prince Ling Yao ?', qe:'Which homunculus possesses Prince Ling Yao\'s body?', c:['Lust','Envy','Greed','Wrath'], ans:2, l:'Greed (deuxième version) prend possession de Ling, qui parvient à coexister avec lui, créant une alliance unique avec Edward.', le:'Greed (the second version) possesses Ling, who manages to coexist with him, forming a unique alliance with Edward.' },
+      { q:'Comment Mustang récupère-t-il la vue à la fin ?', qe:'How does Mustang regain his sight at the end?', c:['Une potion alchimique','Une pierre philosophale','Une greffe','Il ne la récupère pas'], ans:1, l:'Une pierre philosophale de Marcoh est utilisée pour restaurer la vue de Mustang, sacrifiée par Father lors du combat final.', le:'One of Marcoh\'s philosopher\'s stones is used to restore Mustang\'s eyesight, recovered after Father\'s final battle.' },
+      { q:'Quel pays a créé une armée de pierres philosophales ?', qe:'Which country built an army of philosopher\'s stones?', c:['Xing','Ishval','Drachma','Amestris'], ans:3, l:'Tout le territoire d\'Amestris a été conçu comme un cercle de transmutation géant pour permettre à Father de devenir divin.', le:'The entire territory of Amestris was designed as a giant transmutation circle to allow Father to become divine.' },
+      { q:'Quel est le sacrifice d\'Edward à la fin ?', qe:'What does Edward sacrifice at the end?', c:['Sa vie','Ses automails','Sa capacité à utiliser l\'alchimie','Sa mémoire'], ans:2, l:'Edward sacrifie sa Porte de la Vérité (donc l\'alchimie) pour récupérer le corps d\'Alphonse, choix profondément humaniste.', le:'Edward sacrifices his Gate of Truth (and thus alchemy) to retrieve Alphonse\'s body — a deeply humanist choice.' },
+    ],
+  },
+  40748: { // Jujutsu Kaisen
+    title: 'Jujutsu Kaisen', image: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg',
+    questions: [
+      { q:'Combien de doigts compte Sukuna ?', qe:'How many fingers does Sukuna have in total?', c:['10','15','20','25'], ans:2, l:'Le Roi des Fléaux a légué 20 doigts maudits, qu\'il faut tous absorber pour le ramener à pleine puissance.', le:'The King of Curses left behind 20 cursed fingers; all must be consumed to fully restore him.' },
+      { q:'Quelle technique maudite Megumi maîtrise-t-il ?', qe:'Which cursed technique does Megumi wield?', c:['Tonnerre Noir','Dix Ombres','Boogie Woogie','Idle Death Gamble'], ans:1, l:'La Technique des Dix Ombres invoque dix bêtes-divines servantes ; lorsqu\'une est vaincue, elle ne peut plus être invoquée à nouveau.', le:'The Ten Shadows Technique summons ten divine-beast shikigami; once defeated, a shikigami can never be summoned again.' },
+      { q:'Quelle est l\'expansion du domaine de Gojo ?', qe:'What is Gojo\'s domain expansion?', c:['Malevolent Shrine','Infinite Void','Chimera Shadow Garden','Time Cell Moon Palace'], ans:1, l:'Muryōkūsho (Vide Infini) inonde la cible d\'une infinité d\'informations, la paralysant à un niveau cognitif.', le:'Muryōkūsho (Infinite Void) floods the target with infinite information, paralyzing them at a cognitive level.' },
+      { q:'De quel personnage Yuji est-il le réceptacle ?', qe:'Whose vessel is Yuji?', c:['Mahito','Sukuna','Kenjaku','Tengen'], ans:1, l:'Yuji a avalé un doigt de Sukuna pour sauver ses amis, devenant son réceptacle vivant et conservant sa volonté.', le:'Yuji swallowed a Sukuna finger to save his friends, becoming his living vessel while keeping his own will.' },
+      { q:'Quel est l\'outil de combat de Nobara ?', qe:'What weapon does Nobara use?', c:['Sabre','Marteau et clous','Arc','Chaînes'], ans:1, l:'Nobara Kugisaki utilise un marteau et des clous, combinés à sa technique "poupée de paille" pour atteindre des cibles à distance.', le:'Nobara Kugisaki uses a hammer and nails combined with her "Straw Doll" technique to strike targets remotely.' },
+      { q:'Comment s\'appelle la technique de Toji Fushiguro qui annule le Cursed Energy ?', qe:'What is the name of Toji Fushiguro\'s ability to nullify cursed energy?', c:['Heavenly Restriction','Curse Nullification','Black Flash','Reverse Cursed Technique'], ans:0, l:'La Restriction Céleste de Toji lui ôte la moindre énergie maudite mais décuple ses capacités physiques au-delà de l\'humain.', le:'Toji\'s Heavenly Restriction strips him of all cursed energy but pushes his physical abilities far beyond human limits.' },
+      { q:'Quelle école Yuji intègre-t-il ?', qe:'Which school does Yuji join?', c:['Kyoto Jujutsu High','Tokyo Jujutsu High','Shibuya High','Tengen Academy'], ans:1, l:'Tokyo Jujutsu High forme les élèves exorcistes du Japon Est ; sa rivale est l\'école de Kyoto.', le:'Tokyo Jujutsu High trains the eastern Japanese sorcerer students; its rival is the Kyoto school.' },
+      { q:'Quel personnage incarne le "Star Plasma Vessel" lié à Tengen ?', qe:'Who is the Star Plasma Vessel linked to Tengen?', c:['Yuki Tsukumo','Riko Amanai','Maki Zenin','Kasumi Miwa'], ans:1, l:'Riko Amanai est le réceptacle destiné à fusionner avec Tengen pour stabiliser sa structure cosmique.', le:'Riko Amanai is the vessel meant to merge with Tengen to stabilize his cosmic structure.' },
+    ],
+  },
+};
+
+// QUIZ_BANK_EXTRA: niveaux 2 (Moyen) et 3 (Difficile) par anime
+const QUIZ_BANK_EXTRA = {
+  21: { // One Piece
+    2: [
+      { q:'Comment s\'appelle le bateau actuel des Mugiwara ?', qe:'What is the Straw Hats\' current ship?', c:['Going Merry','Thousand Sunny','Striker','Red Force'], ans:1, l:'Construit par Franky à Water 7 avec le bois d\'Adam, le Thousand Sunny remplace le Going Merry.', le:'Built by Franky at Water 7 from Adam Wood, the Thousand Sunny replaces the Going Merry.' },
+      { q:'Quel est le pouvoir d\'Eustass Kid ?', qe:'What is Eustass Kid\'s power?', c:['Magnétisme','Foudre','Glace','Vent'], ans:0, l:'Kid contrôle le magnétisme grâce au Jiki Jiki no Mi, attirant et fusionnant les métaux.', le:'Kid wields magnetism through the Jiki Jiki no Mi, attracting and fusing metal objects.' },
+      { q:'Quelle est la prime de Luffy après l\'arc Wano ?', qe:'What is Luffy\'s bounty after the Wano arc?', c:['500M ฿','1.5 milliard ฿','3 milliards ฿','5 milliards ฿'], ans:2, l:'La prime atteint 3 milliards de berrys après que Luffy a vaincu Kaido aux côtés de Law et Kid.', le:'The bounty rises to 3 billion berries after Luffy defeats Kaido alongside Law and Kid.' },
+      { q:'Vrai nom de famille de Sanji ?', qe:'Sanji\'s real family name?', c:['Vinsmoke','Black','Charlotte','D.'], ans:0, l:'Sanji est Vinsmoke Sanji, 3e fils de la famille royale du Germa 66 qu\'il a renié.', le:'Sanji is Vinsmoke Sanji, the third son of the Germa 66 royal family he disowned.' },
+      { q:'Qui est Joy Boy ?', qe:'Who is Joy Boy?', c:['Le 1er Roi des Pirates','Une figure légendaire de l\'Ère du Vide','Le créateur des Devil Fruits','Un ancien amiral'], ans:1, l:'Joy Boy est une figure héroïque du Siècle Vide dont l\'esprit habite Luffy via le Nika.', le:'Joy Boy is a heroic figure of the Void Century whose spirit inhabits Luffy through Nika.' },
+    ],
+    3: [
+      { q:'Sur quelle île se trouve le trésor One Piece ?', qe:'On which island lies One Piece?', c:['Raftel','Laugh Tale','Marie Geoise','Lodestar'], ans:1, l:'L\'île était surnommée "Raftel" mais sa vraie écriture est Laugh Tale, dévoilée par Roger lui-même.', le:'The island was called "Raftel" but the true spelling is Laugh Tale, revealed by Roger himself.' },
+      { q:'Quel type de Devil Fruit possède Sengoku ?', qe:'What type of Devil Fruit does Sengoku have?', c:['Logia Magma','Zoan Mythique modèle Daibutsu','Paramecia Tremblement','Logia Foudre'], ans:1, l:'Sengoku se change en Bouddha doré géant capable de créer des ondes de choc dévastatrices.', le:'Sengoku transforms into a giant golden Buddha that can release devastating shockwaves.' },
+      { q:'Épée maudite de Zoro qui aurait tué 1000 personnes ?', qe:'Zoro\'s cursed sword that supposedly killed 1000 people?', c:['Wado Ichimonji','Sandai Kitetsu','Shusui','Enma'], ans:1, l:'Sandai Kitetsu est la 3e génération de cette lignée; Zoro la dompte par défi du destin à Loguetown.', le:'Sandai Kitetsu is the 3rd of its bloodline; Zoro tames it by daring fate at Loguetown.' },
+      { q:'Bartholomew Kuma était roi de quelle nation avant les Pacifistas ?', qe:'Which kingdom did Bartholomew Kuma rule before the Pacifistas?', c:['Sorbet','Drum','Alabasta','Goa'], ans:0, l:'Kuma régnait sur le royaume de Sorbet avant de rejoindre l\'Armée Révolutionnaire puis devenir Pacifista.', le:'Kuma ruled the Kingdom of Sorbet before joining the Revolutionary Army, then becoming a Pacifista.' },
+      { q:'Quel âge a réellement Brook ?', qe:'What is Brook\'s actual age?', c:['38','55','73','90'], ans:3, l:'Mort à 38 ans, Brook a erré 50 ans dans le Triangle de Florian avant de croiser les Mugiwara à 88+ ans (90 actualisé).', le:'Brook died at 38, then drifted 50 years in the Florian Triangle before meeting the Straw Hats around 90.' },
+    ],
+  },
+  20: { // Naruto
+    2: [
+      { q:'Combien de queues a Kurama ?', qe:'How many tails does Kurama have?', c:['7','8','9','10'], ans:2, l:'Kurama est le Bijū à 9 queues, le plus puissant des démons à queues, scellé en Naruto à sa naissance.', le:'Kurama is the Nine-Tailed Beast, the most powerful Bijū, sealed in Naruto at his birth.' },
+      { q:'Combien de Bijū existe-t-il en tout ?', qe:'How many Tailed Beasts exist?', c:['7','8','9','10'], ans:2, l:'9 Bijū au total, de Shukaku (1 queue) à Kurama (9 queues), tous issus du chakra du Jūbi.', le:'There are 9 Tailed Beasts, from Shukaku (1) to Kurama (9), all born from the Ten-Tails\' chakra.' },
+      { q:'Élément naturel principal de Kakashi ?', qe:'Kakashi\'s primary nature element?', c:['Eau','Feu','Foudre','Vent'], ans:2, l:'L\'affinité Foudre permet à Kakashi de maîtriser le Chidori et le Raikiri.', le:'His Lightning affinity lets Kakashi wield Chidori and Raikiri.' },
+      { q:'Surnom de Minato ?', qe:'Minato\'s nickname?', c:['Hokage de Cristal','Éclair Jaune','Vent du Sud','Maître des Sceaux'], ans:1, l:'L\'"Éclair Jaune de Konoha" doit son nom à sa téléportation Hiraishin et à ses cheveux blonds.', le:'The "Yellow Flash of Konoha" earned the name from his Flying Thunder God technique and blond hair.' },
+      { q:'Maître de Naruto pour le Mode Sage (Ermite) ?', qe:'Naruto\'s Sage Mode mentor?', c:['Kakashi','Jiraiya','Hashirama','Iruka'] , ans:1, l:'Naruto apprend le Mode Sage des crapauds au Mont Myōboku, terminant ce que Jiraiya avait commencé.', le:'Naruto learns Sage Mode from the toads atop Mount Myōboku, completing what Jiraiya started.' },
+    ],
+    3: [
+      { q:'Vraie identité de "Tobi" au début de Shippūden ?', qe:'Real identity of "Tobi" early in Shippūden?', c:['Obito Uchiha','Izuna Uchiha','Shisui Uchiha','Indra Ōtsutsuki'], ans:0, l:'Obito, ami d\'enfance de Kakashi présumé mort à Kannabi, opère sous le masque pour Madara puis le double.', le:'Obito, Kakashi\'s childhood friend presumed dead at Kannabi, operates under the mask for Madara before double-crossing him.' },
+      { q:'Mère biologique de Sasuke ?', qe:'Sasuke\'s biological mother?', c:['Mikoto Uchiha','Kushina Uzumaki','Mebuki','Tsumi'], ans:0, l:'Mikoto Uchiha, meilleure amie de Kushina, est massacrée par son fils aîné Itachi avec le reste du clan.', le:'Mikoto Uchiha, Kushina\'s best friend, was killed by her eldest son Itachi alongside the rest of the clan.' },
+      { q:'Kekkei genkai signature d\'Hashirama Senju ?', qe:'Hashirama Senju\'s signature kekkei genkai?', c:['Glace','Mokuton (Bois)','Lave','Tempête'], ans:1, l:'Le Mokuton, fusion Terre+Eau, est unique à Hashirama; tous les autres utilisateurs ont reçu ses cellules.', le:'Mokuton, a fusion of Earth+Water, is unique to Hashirama; every other user received his cells.' },
+      { q:'Capitaine de l\'unité Anbu Racine où Itachi servait ?', qe:'Captain of the Root Anbu where Itachi served?', c:['Yamato','Kakashi','Danzō','Tenzō'], ans:2, l:'Danzō dirige la Racine, Anbu noire qui pousse Itachi à massacrer le clan Uchiha pour éviter un coup d\'État.', le:'Danzō led Root, a black Anbu unit that pushed Itachi into massacring the Uchiha clan to prevent a coup.' },
+      { q:'Trois techniques iconiques du Mangekyō d\'Itachi ?', qe:'Three iconic techniques of Itachi\'s Mangekyō?', c:['Tsukuyomi, Amaterasu, Susanoo','Kotoamatsukami','Izanagi','Kamui'], ans:0, l:'Itachi maîtrise les trois doujutsu mythiques : Tsukuyomi (genjutsu), Amaterasu (feu noir), Susanoo (avatar).', le:'Itachi wields all three mythic doujutsu: Tsukuyomi (genjutsu), Amaterasu (black flame), Susanoo (avatar).' },
+    ],
+  },
+  269: { // Bleach
+    2: [
+      { q:'Capitaine de la 11e division ?', qe:'Captain of the 11th Division?', c:['Byakuya Kuchiki','Kenpachi Zaraki','Sajin Komamura','Mayuri Kurotsuchi'], ans:1, l:'Kenpachi Zaraki, brutal et obsédé par le combat, dirige la 11e division — la plus belliqueuse du Gotei 13.', le:'Kenpachi Zaraki, brutal and battle-obsessed, leads the 11th — the most warlike Gotei 13 division.' },
+      { q:'Mère biologique d\'Ichigo ?', qe:'Ichigo\'s biological mother?', c:['Yoruichi','Masaki Kurosaki','Retsu Unohana','Hisana'], ans:1, l:'Masaki, Quincy de naissance, meurt en protégeant Ichigo enfant d\'un Hollow nommé Grand Fisher.', le:'Masaki, a Quincy by birth, died protecting young Ichigo from a Hollow named Grand Fisher.' },
+      { q:'Combien de divisions compte initialement le Gotei 13 ?', qe:'How many divisions does the Gotei 13 originally have?', c:['10','12','13','15'], ans:2, l:'13 divisions fondées par Yamamoto à l\'origine, chacune dirigée par un capitaine et son lieutenant.', le:'13 divisions founded by Yamamoto, each led by a captain and lieutenant.' },
+      { q:'Race d\'Uryū Ishida ?', qe:'Uryū Ishida\'s race?', c:['Shinigami','Quincy','Hollow','Fullbringer'], ans:1, l:'Les Quincy sont des humains aux pouvoirs spirituels capables de créer des armes d\'esprit (Reishi).', le:'Quincies are spiritually empowered humans who craft weapons from Reishi.' },
+      { q:'Vitesse spéciale des Shinigami à grande échelle ?', qe:'Shinigami fast-movement technique?', c:['Sonido','Hirenkyaku','Shunpo','Bringer Light'], ans:2, l:'Le Shunpo (pas-éclair) est la téléportation par bonds des Shinigami — Yoruichi en est la maîtresse incontestée.', le:'Shunpo (Flash Step) is the Shinigami\'s burst-teleport technique — Yoruichi is its undisputed master.' },
+    ],
+    3: [
+      { q:'Nom du Zanpakutō d\'Aizen ?', qe:'Aizen\'s Zanpakutō name?', c:['Kyōka Suigetsu','Suzumebachi','Tobiume','Shinsō'], ans:0, l:'Kyōka Suigetsu impose une "hypnose totale" à quiconque voit son Shikai — l\'arme parfaite de manipulation.', le:'Kyōka Suigetsu imposes "complete hypnosis" on anyone who sees its Shikai — the perfect manipulation weapon.' },
+      { q:'3e Espada (numéro 3) ?', qe:'3rd Espada (rank 3)?', c:['Ulquiorra','Tier Halibel','Nelliel','Starrk'], ans:1, l:'Tier Halibel, Espada à thème requin, incarne le Sacrifice ; Aizen la trahit pendant la Fake Karakura Town.', le:'Tier Halibel, the shark-themed Espada, embodies Sacrifice; Aizen betrays her during the Fake Karakura Town arc.' },
+      { q:'Forme finale d\'Ichigo dans la guerre Quincy ?', qe:'Ichigo\'s final form in the Quincy War?', c:['Mugetsu','True Bankai (double Tensa Zangetsu)','Vasto Lorde','Hollow Form'], ans:1, l:'Lors de TYBW, Ichigo manie la version vraie de Tensa Zangetsu : un fragment d\'épée Shinigami fusionné avec une lame Quincy.', le:'In TYBW, Ichigo wields the true Tensa Zangetsu: a Shinigami sword fragment fused with a Quincy blade.' },
+      { q:'Roi des Quincy / antagoniste de TYBW ?', qe:'King of the Quincy / TYBW villain?', c:['Yhwach','Aizen','Juhabach','Bach'], ans:0, l:'Yhwach, fils d\'Âme du Roi-Soul, vise à fusionner les trois mondes en supprimant la mort.', le:'Yhwach, son of the Soul King, aims to merge the three worlds by erasing death itself.' },
+      { q:'Bankai de Byakuya Kuchiki ?', qe:'Byakuya Kuchiki\'s Bankai?', c:['Senbonzakura Kageyoshi','Hihiō Zabimaru','Kōkō no Mitsurugi','Tensa Zangetsu'], ans:0, l:'Senbonzakura Kageyoshi disperse mille épées en pétales tranchants, contrôlés par Byakuya à distance.', le:'Senbonzakura Kageyoshi scatters a thousand blades into razor petals controlled remotely by Byakuya.' },
+    ],
+  },
+  813: { // Dragon Ball Z
+    2: [
+      { q:'Forme finale de Buu ?', qe:'Buu\'s final form?', c:['Super Buu','Kid Buu','Fat Buu','Evil Buu'], ans:1, l:'Kid Buu est la forme originelle pure et imprévisible — Goku le détruit avec une Genkidama universelle.', le:'Kid Buu is the original pure, unpredictable form — Goku destroys him with a universal Spirit Bomb.' },
+      { q:'Couleur des cheveux en Super Saiyan 2 ?', qe:'Super Saiyan 2 hair color?', c:['Bleu','Jaune avec éclairs','Rouge','Noir argenté'], ans:1, l:'SSJ2 conserve les cheveux blonds dressés mais ajoute des éclairs dans l\'aura, signature de Gohan vs Cell.', le:'SSJ2 keeps blond spikes but adds crackling lightning in the aura, debuted by Gohan vs Cell.' },
+      { q:'Plus jeune fils de Goku ?', qe:'Goku\'s youngest son?', c:['Gohan','Goten','Trunks','Bra'], ans:1, l:'Goten naît durant l\'absence de Goku au paradis ; il forme la fusion Gotenks avec Trunks.', le:'Goten is born during Goku\'s afterlife stay; he later forms the Gotenks fusion with Trunks.' },
+      { q:'Ressource énergétique des androïdes 17 et 18 ?', qe:'Androids 17 and 18 energy source?', c:['Cellules Saiyan','Énergie illimitée','Solaire','Pile au plutonium'], ans:1, l:'Le Dr Gero a converti deux humains en cyborgs alimentés par un réacteur d\'énergie infinie.', le:'Dr. Gero converted two humans into cyborgs powered by an infinite-energy reactor.' },
+      { q:'Quel ennemi est créé par les ondes du Z-Sword ?', qe:'Which enemy emerges from breaking the Z-Sword?', c:['Cell','Old Kai','Buu','Beerus'], ans:1, l:'Briser la Z-Sword libère le Vieux Kaiō Shin enfermé qui éveille le potentiel ultime de Gohan.', le:'Breaking the Z-Sword releases the imprisoned Old Kai who unlocks Gohan\'s ultimate potential.' },
+    ],
+    3: [
+      { q:'Race ayant peuplé Vegeta avant les Saiyans ?', qe:'Race that lived on Planet Vegeta before the Saiyans?', c:['Tsufurians','Yardrats','Konats','Démons Maïjins'], ans:0, l:'Les Tsufurians (peuple pacifique et techno) ont été massacrés par les Saiyans qui ont rebaptisé la planète.', le:'The Tsufurians (peaceful, technological people) were wiped out by the Saiyans who renamed the planet.' },
+      { q:'Forme "Mystic Gohan" est obtenue grâce à ?', qe:'How does Gohan obtain "Mystic" form?', c:['Une transformation SSJ3','Le rituel d\'Old Kai','La salle de l\'esprit du temps','Une potion de Bulma'], ans:1, l:'Old Kai sacrifie sa vie via un rituel pour libérer le potentiel caché de Gohan, dépassant le SSJ.', le:'Old Kai performs a life-bonding ritual to unlock Gohan\'s hidden potential, surpassing SSJ.' },
+      { q:'Grand-père adoptif de Goku ?', qe:'Goku\'s adoptive grandfather?', c:['Maître Roshi','Son Gohan','Karin','Ox-Satan'], ans:1, l:'Son Gohan recueille bébé Goku tombé du ciel ; Goku nommera son fils en l\'honneur de son grand-père.', le:'Son Gohan rescued baby Goku found in a pod; Goku later names his own son after his grandfather.' },
+      { q:'Combien de souhaits accordent les Dragon Balls de Namek ?', qe:'How many wishes do Namek Dragon Balls grant?', c:['1','2','3','4'], ans:2, l:'Porunga (Namek) accorde 3 souhaits au lieu d\'un seul comme Shenron (Terre).', le:'Porunga (Namek) grants 3 wishes per summon, unlike Shenron (Earth) who grants only one.' },
+      { q:'Quelle planète enseigne la téléportation à Goku ?', qe:'Which planet teaches Goku Instant Transmission?', c:['Vegeta','Yardrat','Namek','Kaiō du Nord'], ans:1, l:'Après sa lutte contre Freezer, Goku atterrit sur Yardrat où il apprend le Shunkan Idō (téléportation).', le:'Following his battle with Frieza, Goku lands on Yardrat where he learns Shunkan Idō (Instant Transmission).' },
+    ],
+  },
+  19: { // Monster
+    2: [
+      { q:'Profession de Reichwein, l\'allié de Tenma ?', qe:'Profession of Reichwein, Tenma\'s ally?', c:['Avocat','Psychiatre','Journaliste','Ancien policier'], ans:1, l:'Le Dr Reichwein est psychiatre et aide Tenma à comprendre les traumatismes de Johan.', le:'Dr. Reichwein is a psychiatrist who helps Tenma understand Johan\'s traumas.' },
+      { q:'Code du livre pour enfants au cœur du mystère ?', qe:'Title of the children\'s book at the mystery\'s core?', c:['"Le Chat sans nom"','"Le Monstre sans nom"','"La Maison rouge"','"Les Yeux de Bonaparta"'], ans:1, l:'"Le Monstre sans nom" est l\'histoire allégorique qui a façonné l\'identité de Johan dans son enfance.', le:'"The Nameless Monster" is the allegorical story that shaped Johan\'s identity in childhood.' },
+      { q:'Où Tenma exerce-t-il en début de série ?', qe:'Where does Tenma practice at the start?', c:['Berlin','Düsseldorf','Munich','Vienne'], ans:1, l:'Tenma travaille à l\'Hôpital Eisler Memorial à Düsseldorf comme jeune neurochirurgien étoile.', le:'Tenma works at Eisler Memorial Hospital in Düsseldorf as a rising-star neurosurgeon.' },
+      { q:'Identité du tueur en série "Le Roses Rouges" ?', qe:'Identity of "the Red Roses Mansion" killer?', c:['Petr Čapek','Roberto','Johan Liebert','Karl Bonaparta'], ans:2, l:'Johan oriente puis force d\'autres à tuer pour effacer ses souvenirs ; les Roses Rouges sont son traumatisme fondateur.', le:'Johan manipulates others into killing to erase his memories; the Red Roses Mansion is his founding trauma.' },
+      { q:'Mémoire spéciale de l\'inspecteur Lunge ?', qe:'Inspector Lunge\'s special skill?', c:['Photographique','Synesthésique','Auditive parfaite','Hyper-vitesse'], ans:0, l:'Lunge enregistre tout en mémoire absolue, mimant la frappe d\'un clavier sur ses doigts pour stocker.', le:'Lunge records everything via perfect memory, miming keyboard strokes on his fingers to file information.' },
+    ],
+    3: [
+      { q:'Pseudonymes de Franz Bonaparta ?', qe:'Aliases used by Franz Bonaparta?', c:['Klaus Poppe / Emil Sebe','Hermann Führ','Wolfgang Grimmer','Petr Čapek'], ans:0, l:'L\'ex-psychiatre de la Stasi a publié des livres pour enfants sous "Klaus Poppe" et "Emil Sebe".', le:'The former Stasi psychiatrist published children\'s books as "Klaus Poppe" and "Emil Sebe".' },
+      { q:'Profession de Wolfgang Grimmer ?', qe:'Wolfgang Grimmer\'s profession?', c:['Pédiatre','Journaliste pigiste','Procureur','Ingénieur'], ans:1, l:'Grimmer est journaliste freelance enquêtant sur Kinderheim 511 — survivant lui-même de l\'orphelinat.', le:'Grimmer is a freelance journalist investigating Kinderheim 511 — himself a survivor of the orphanage.' },
+      { q:'Pays d\'origine du livre "Le Monstre sans nom" ?', qe:'Origin country of the "Nameless Monster" book?', c:['Allemagne','Tchécoslovaquie','Pologne','Roumanie'], ans:1, l:'Bonaparta a publié le conte en Tchécoslovaquie communiste pour formater psychologiquement les jumeaux.', le:'Bonaparta published the tale in communist Czechoslovakia to psychologically condition the twins.' },
+      { q:'Lieu où Johan a passé la nuit traumatique des Roses Rouges ?', qe:'Where did Johan endure the Red Roses traumatic night?', c:['Prague','Berlin-Est','Roses Rouges Mansion','Ruhenheim'], ans:2, l:'Le manoir des Roses Rouges en Tchécoslovaquie hébergeait l\'expérience secrète d\'élite de Bonaparta.', le:'The Red Roses Mansion in Czechoslovakia hosted Bonaparta\'s secret elite experiment.' },
+      { q:'Quel personnage tente de devenir "le nouveau Johan" ?', qe:'Which character tries to become "the new Johan"?', c:['Roberto','Christof Sievernich','Petr Čapek','Lipsky'], ans:1, l:'Christof, ex-orphelin manipulé, copie le mode opératoire de Johan dans une candidature politique sinistre.', le:'Christof, a manipulated orphan, copies Johan\'s methods within a sinister political bid.' },
+    ],
+  },
+  9253: { // Steins;Gate
+    2: [
+      { q:'Limite de caractères d\'un D-Mail ?', qe:'D-Mail character limit?', c:['16','36','100','512'], ans:1, l:'Un D-Mail est limité à 36 caractères pour économiser l\'énergie nécessaire au saut temporel.', le:'A D-Mail is capped at 36 characters to limit the energy needed for time-jumping.' },
+      { q:'Vrai nom du propriétaire qui se révèle être un agent de SERN ?', qe:'Real name of the landlord revealed as a SERN agent?', c:['Yūgo Tennouji','Tetsu Hashida','Mr. Braun','Les deux : Tennouji et Mr. Braun'], ans:3, l:'Yūgo Tennouji, alias Mr. Braun, est l\'agent de SERN qui surveille discrètement Okabe.', le:'Yūgo Tennouji, alias Mr. Braun, is the SERN operative quietly monitoring Okabe.' },
+      { q:'Café/lieu de travail de Mayuri ?', qe:'Mayuri\'s workplace café?', c:['MayQueen+Nyan2','A-1 Beta','Tsutaya','Akiba Co\'s'], ans:0, l:'Le café cosplay MayQueen+Nyan2 emploie Mayuri (et Faris NyanNyan, sa propriétaire-cliente).', le:'The cosplay café MayQueen+Nyan2 employs Mayuri (and Faris NyanNyan, its owner-client).' },
+      { q:'Pseudo en ligne de Daru ?', qe:'Daru\'s online handle?', c:['Itaru Hashida','BARREL TITOR','HACKING WIZARD','@channel_admin'], ans:0, l:'Itaru "Daru" Hashida est l\'as du hack et un membre fondateur du Future Gadget Lab.', le:'Itaru "Daru" Hashida is the hacker ace and a founding member of the Future Gadget Lab.' },
+      { q:'Compositrice du célèbre opening "Hacking to the Gate" ?', qe:'Composer of the iconic opening "Hacking to the Gate"?', c:['Yui','Kanako Itō','LiSA','Aimer'], ans:1, l:'Kanako Itō chante "Hacking to the Gate", titre signature de la série.', le:'Kanako Itō performs "Hacking to the Gate", the show\'s signature track.' },
+    ],
+    3: [
+      { q:'Identifiant numérique de la Steins Gate Worldline ?', qe:'Numerical ID of the Steins Gate Worldline?', c:['1.048596','1.130426','0.571024','2.615074'], ans:1, l:'Le coefficient 1.130426 marque la Steins Gate, divergeant de plus de 1% des lignes Alpha et Beta.', le:'Coefficient 1.130426 marks Steins Gate, diverging by over 1% from both Alpha and Beta worldlines.' },
+      { q:'De quelle année provient Suzuha ?', qe:'What year does Suzuha come from?', c:['2025','2030','2036','2050'], ans:2, l:'Suzuha vient de 2036, futur où SERN règne en dystopie après avoir maîtrisé le voyage temporel.', le:'Suzuha hails from 2036, a dystopian future where SERN rules after mastering time travel.' },
+      { q:'Surnom donné par Okabe à la divergence où Mayuri meurt ?', qe:'Okabe\'s name for the divergence where Mayuri dies?', c:['Alpha','Beta','Gamma','Omega'], ans:0, l:'Les Alpha Worldlines mènent à la mort répétée de Mayuri ; les Beta mènent à la 3e Guerre Mondiale.', le:'Alpha worldlines lead to Mayuri\'s repeated death; Beta worldlines lead to WW3.' },
+      { q:'Phrase fétiche d\'Okabe à la fin d\'un appel ?', qe:'Okabe\'s catchphrase ending a phone call?', c:['Tutturu~','El Psy Congroo','I am Mad Scientist','La science triomphera'], ans:1, l:'"El Psy Congroo" sert de signature paranoïaque de Hououin Kyouma — son sens reste volontairement obscur.', le:'"El Psy Congroo" is Hououin Kyouma\'s paranoid sign-off — its meaning is intentionally obscure.' },
+      { q:'Première phrase clé qui prouve à Kurisu qu\'Okabe vient du futur ?', qe:'First key phrase that proves to Kurisu that Okabe comes from the future?', c:['"Tutturu"','"Kurisu, tu m\'as poignardé"','"Hououin Kyouma"','"Ils me cherchent"'], ans:1, l:'Okabe choque Kurisu en évoquant un futur où elle l\'a poignardé — événement encore impossible dans la timeline présente.', le:'Okabe shocks Kurisu by mentioning a future where she stabbed him — an event still impossible in the present timeline.' },
+    ],
+  },
+  11061: { // HxH 2011
+    2: [
+      { q:'Catégorie de Nen de Killua ?', qe:'Killua\'s Nen category?', c:['Renforcement','Manipulation','Spécialisation','Transformation'], ans:3, l:'Killua est Transformer (Transmuter), ce qui colle à son aura de foudre Godspeed/Whirlwind.', le:'Killua is a Transmuter, fitting his lightning-based Godspeed/Whirlwind aura.' },
+      { q:'Numéro de Hisoka dans la Brigade Fantôme ?', qe:'Hisoka\'s Phantom Troupe number?', c:['#3','#4','#5','#7'], ans:1, l:'Hisoka occupe la 4e place — il a obtenu le tatouage en battant son ancien titulaire.', le:'Hisoka holds the 4th seat — he earned the tattoo by killing the previous holder.' },
+      { q:'Famille royale de Kakin sur le bateau Black Whale ?', qe:'Kakin royal family on the Black Whale?', c:['Hui Guo Rou','Beyond Netero','Pariston Hill','Cheadle Yorkshire'], ans:0, l:'Le roi Nasubi Hui Guo Rou de Kakin entreprend l\'expédition vers le Continent Noir avec ses 14 enfants.', le:'King Nasubi Hui Guo Rou of Kakin sets out for the Dark Continent with his 14 children aboard the Black Whale.' },
+      { q:'Qui a tué Pokkle pendant l\'arc Chimera Ant ?', qe:'Who kills Pokkle during the Chimera Ant arc?', c:['Pitou','Pouf','Knuckle','Meleoron'], ans:0, l:'Neferpitou capture, lobotomise puis tue Pokkle pour étudier son Nen et nourrir Meruem.', le:'Neferpitou captures, lobotomizes, then kills Pokkle to study his Nen and feed Meruem.' },
+      { q:'Adversaire final de Gon dans l\'arc Chimera Ant ?', qe:'Gon\'s final opponent in the Chimera Ant arc?', c:['Meruem','Pouf','Pitou','Youpi'], ans:2, l:'Gon affronte Pitou en l\'éveillant comme adulte définitif — au prix de toute son existence Nen.', le:'Gon fights Pitou by aging into his final adult form — sacrificing his entire Nen existence.' },
+    ],
+    3: [
+      { q:'Vrai nom de la spécialité de Chrollo ?', qe:'Chrollo\'s ability name?', c:['Skill Hunter','Bookmark','Genjutsu','Ten Heroes'], ans:0, l:'Skill Hunter (Bandit\'s Secret) permet à Chrollo de voler les pouvoirs Nen — sous conditions strictes.', le:'Skill Hunter (Bandit\'s Secret) lets Chrollo steal Nen abilities — under strict conditions.' },
+      { q:'Composant clé du serment de Kurapika ?', qe:'Key element of Kurapika\'s vow?', c:['Sa propre vie si utilisé hors Brigade','La vie de Leorio','Une perte de mémoire','Un sacrifice de Nen'], ans:0, l:'Kurapika a juré qu\'utiliser la chaîne Judgment hors de la Brigade Fantôme le tuerait instantanément.', le:'Kurapika swore that using the Judgment chain on anyone but the Phantom Troupe would kill him instantly.' },
+      { q:'Capacité de Meleoron, l\'Ant chien-caméléon ?', qe:'Meleoron, the chameleon-Ant\'s ability?', c:['Invisibilité totale','Téléportation','Lecture mentale','Vol'], ans:0, l:'God\'s Accomplice rend Meleoron et ses alliés invisibles aux yeux et au Nen — limité par sa respiration.', le:'God\'s Accomplice turns Meleoron and his allies invisible to sight and Nen — limited by his breathing.' },
+      { q:'Pseudonyme de Pariston Hill ?', qe:'Pariston Hill\'s reputation?', c:['Le Ange Sourire','Le Loup Solitaire','Le Renard','Le Sage'], ans:0, l:'Pariston, l\'"Ange Sourire", est l\'antagoniste politique de Netero — un manipulateur charmant.', le:'Pariston, the "Smiling Angel", is Netero\'s political antagonist — a charming manipulator.' },
+      { q:'Hatsu de Hisoka qui imite la peau ?', qe:'Hisoka\'s skin-mimicking ability?', c:['Bungee Gum','Texture Surprise','Skill Hunter','Big Bang Impact'], ans:1, l:'Texture Surprise convertit son aura en feuilles imitant n\'importe quelle surface — pour piéger ses adversaires.', le:'Texture Surprise converts his aura into sheets mimicking any surface — used to trap opponents.' },
+    ],
+  },
+  16498: { // AoT
+    2: [
+      { q:'Détenteur du Titan Bête ?', qe:'Beast Titan holder?', c:['Reiner Braun','Zeke Yeager','Bertholdt Hoover','Tom Ksaver'], ans:1, l:'Zeke Yeager, demi-frère d\'Eren et fils de Grisha, hérite du Bestial après Tom Ksaver.', le:'Zeke Yeager, Eren\'s half-brother and Grisha\'s son, inherits the Beast Titan after Tom Ksaver.' },
+      { q:'Quel personnage hérite du Titan Mâchoires ?', qe:'Who inherits the Jaw Titan?', c:['Marcel Galliard','Porco Galliard','Falco Grice','Galliard family chain'], ans:3, l:'Marcel d\'abord (mangé par Ymir), puis Ymir, puis Porco, et enfin Falco — le Titan circule chez les Galliard.', le:'Marcel first (eaten by Ymir), then Ymir, then Porco, then Falco — the Titan stays in the Galliard line.' },
+      { q:'Bras droit d\'Erwin parmi les nouveaux soldats ?', qe:'Erwin\'s right hand among the new soldiers?', c:['Eren','Levi','Hange','Mike'], ans:1, l:'Levi est le bras armé d\'Erwin, exécutant ses plans les plus risqués jusqu\'à la perte du commandant.', le:'Levi is Erwin\'s sword arm, executing his riskiest plans up until Erwin\'s death.' },
+      { q:'Wall Maria est brisée à quel district ?', qe:'Wall Maria is breached at which district?', c:['Trost','Shiganshina','Karanes','Yarckel'], ans:1, l:'Le Titan Colossal apparaît à Shiganshina en l\'an 845, ouvrant le récit principal.', le:'The Colossal Titan appears at Shiganshina in year 845, igniting the main story.' },
+      { q:'Quelle race vit dans Wall Maria à l\'origine ?', qe:'Which people originally lived in Wall Maria?', c:['Eldiens','Marleyens','Hizurus','Ackerman'], ans:0, l:'Le Roi Fritz a fui à Paradis avec une partie du peuple eldien, créant les murs avec le Titan Originel.', le:'King Fritz fled to Paradis with part of the Eldian people, raising the walls using the Founding Titan.' },
+    ],
+    3: [
+      { q:'Vrai nom de famille originel d\'Eren ?', qe:'Eren\'s original family name?', c:['Yeager','Kruger','Fritz','Reiss'], ans:0, l:'Yeager (Jaeger en allemand) est le nom de Grisha exilé de Marley sous identité d\'éleveur.', le:'Yeager (Jaeger in German) is Grisha\'s name, exiled from Marley as a doctor in disguise.' },
+      { q:'Qui possédait le Titan Originel avant Grisha ?', qe:'Who held the Founding Titan before Grisha?', c:['Frieda Reiss','Uri Reiss','Rod Reiss','Karl Fritz'], ans:0, l:'Frieda Reiss héritait du Titan Originel; Grisha l\'a tuée pour récupérer le pouvoir et le donner à Eren.', le:'Frieda Reiss carried the Founding Titan; Grisha killed her to claim it and pass it to Eren.' },
+      { q:'Qui hérite du Titan Charrette ?', qe:'Who carries the Cart Titan?', c:['Pieck Finger','Annie','Gabi','Ymir Fritz'], ans:0, l:'Pieck Finger est connue pour son endurance et sa capacité à marcher des jours en forme Titan.', le:'Pieck Finger is known for her endurance and ability to walk for days in Titan form.' },
+      { q:'Premier roi à avoir scellé le serment "renoncer à la guerre" ?', qe:'First king to swear the "renounce war" oath?', c:['Karl Fritz (145e)','Reiner Braun','Helos','Ymir Fritz'], ans:0, l:'Le 145e roi Karl Fritz a effacé l\'histoire et imposé le serment de pacifisme via le Titan Originel.', le:'The 145th king Karl Fritz erased history and locked a pacifist oath through the Founding Titan.' },
+      { q:'Combien d\'années depuis le serment de pacifisme jusqu\'à Eren ?', qe:'Years since the pacifist oath until Eren?', c:['100','107','215','500'], ans:1, l:'107 ans séparent Karl Fritz et la chute du mur Maria — durée durant laquelle Paradis a vécu en isolement.', le:'107 years stand between Karl Fritz and Wall Maria\'s fall — Paradis spent that time in isolation.' },
+    ],
+  },
+  5114: { // FMA Brotherhood
+    2: [
+      { q:'Vrai nom de "Father" ?', qe:'Father\'s real designation?', c:['L\'homonculus de la Vérité','Le Petit Hohenheim','Greed le Premier','Le Roi Cristallin'], ans:1, l:'Father est créé à partir d\'une fraction de Truth tirée du sang de Hohenheim — son surnom est "Le Petit Hohenheim".', le:'Father was created from a fraction of Truth drawn from Hohenheim\'s blood — nicknamed "Little Hohenheim".' },
+      { q:'Quel homonculus correspond au péché capital de l\'Envie ?', qe:'Which homunculus matches the sin of Envy?', c:['Lust','Envy','Wrath','Sloth'], ans:1, l:'Envy, jaloux des humains, peut prendre n\'importe quelle apparence — sa vraie forme est un monstre rampant.', le:'Envy, jealous of humans, can shapeshift into anyone — his true form is a writhing monster.' },
+      { q:'Pays voisin que la transmutation d\'âmes a peuplé d\'Ishvalans ?', qe:'Neighboring country that took in Ishvalan refugees?', c:['Drachma','Aerugo','Xing','Creta'], ans:2, l:'De nombreux Ishvalans fuient Amestris vers Xing, traversant le désert oriental après le génocide.', le:'Many Ishvalans flee Amestris to Xing, crossing the eastern desert after the genocide.' },
+      { q:'Identité de "Hawkeye" parmi les militaires ?', qe:'"Hawkeye" identity in the military?', c:['Riza Hawkeye','Maes Hughes','Olivier Mira Armstrong','Riza Mustang'], ans:0, l:'Sous-lieutenant Riza Hawkeye, sniper exceptionnelle, est la garde rapprochée et la confidente de Mustang.', le:'2nd Lt. Riza Hawkeye, an exceptional sniper, is Mustang\'s close guard and confidante.' },
+      { q:'Spécialité alchimique de Scar dans son bras tatoué ?', qe:'Scar\'s alchemical specialty via his tattooed arm?', c:['Décomposition uniquement','Reconstruction','Foudre','Création de pierres'], ans:0, l:'Le tatouage de Scar n\'effectue que la phase de "destruction" : il déclenche le bris atomique sans la reconstruction.', le:'Scar\'s tattoo only performs the "destruction" half of alchemy: atomic breakdown without reconstruction.' },
+    ],
+    3: [
+      { q:'Vrai nom de Pride dans Brotherhood ?', qe:'Pride\'s real identity in Brotherhood?', c:['Selim Bradley','Roy Bradley','Heinkel','Zolf Kimblee'], ans:0, l:'Selim Bradley, le "fils" du président Bradley, est en réalité Pride — le plus ancien des homonculi.', le:'Selim Bradley, "son" of President Bradley, is actually Pride — the eldest of the homunculi.' },
+      { q:'Quelle nation utilise les pierres philosophales pour la guerre ?', qe:'Which nation uses philosopher\'s stones in warfare?', c:['Aerugo','Drachma','Amestris','Xing'], ans:2, l:'Amestris est conçu en cercle de transmutation national pour ériger Father en dieu — chaque guerre alimente le rituel.', le:'Amestris is shaped as a national transmutation circle to elevate Father into a god — every war feeds the ritual.' },
+      { q:'Comment Roy Mustang récupère-t-il la vue à la fin ?', qe:'How does Roy Mustang regain his sight?', c:['Une greffe de Marcoh','Une pierre philosophale','Un échange avec la Vérité','Une potion de Pinako'], ans:1, l:'Marcoh utilise sa propre pierre philosophale pour restaurer les yeux de Mustang après la défaite de Father.', le:'Marcoh uses his own philosopher\'s stone to restore Mustang\'s eyesight after Father\'s defeat.' },
+      { q:'Sacrifice d\'Edward à la fin du combat final ?', qe:'Edward\'s sacrifice at the final battle?', c:['Sa vie','Son alchimie (sa Porte)','Son bras automail','Sa mémoire'], ans:1, l:'Edward troque sa Porte de la Vérité — donc tous ses pouvoirs alchimiques — pour récupérer Alphonse.', le:'Edward trades his Gate of Truth — meaning all his alchemy — to recover Alphonse.' },
+      { q:'Hôte humain de Greed (deuxième version) ?', qe:'Greed\'s human vessel (second version)?', c:['Ling Yao','Lan Fan','Bradley','Edward'], ans:0, l:'Le prince xinois Ling Yao avale une pierre philosophale et fusionne avec Greed, formant une coexistence rare.', le:'Xingese prince Ling Yao swallows a philosopher\'s stone and merges with Greed, a rare coexistence.' },
+    ],
+  },
+  40748: { // JJK
+    2: [
+      { q:'Combien de doigts a Sukuna ?', qe:'How many fingers does Sukuna have?', c:['10','15','20','25'], ans:2, l:'Le Roi des Fléaux a légué 20 doigts maudits — leur consommation totale ranime ses pouvoirs absolus.', le:'The King of Curses left 20 cursed fingers — consuming all of them fully restores his peak power.' },
+      { q:'Domaine de Gojo ?', qe:'Gojo\'s domain expansion?', c:['Sanctuaire Malveillant','Vide Infini','Jardin de l\'Ombre','Palais de la Lune'], ans:1, l:'Muryōkūsho impose une infinité d\'informations à la cible, paralysant son cerveau pendant 0.2s perçues comme l\'éternité.', le:'Muryōkūsho floods the target with infinite information, paralyzing the brain for 0.2s that feel like eternity.' },
+      { q:'Outil utilisé par Nobara avec sa technique poupée de paille ?', qe:'Tool used by Nobara with the Straw Doll technique?', c:['Aiguilles','Marteau et clous','Sabre','Arc'], ans:1, l:'Nobara cloue une poupée pour transférer les dégâts et énergie maudite à distance vers la cible.', le:'Nobara nails a straw doll to transfer cursed damage remotely to her target.' },
+      { q:'École rivale du lycée Jujutsu de Tokyo ?', qe:'Rival school of Tokyo Jujutsu High?', c:['Kyoto Jujutsu High','Osaka Jujutsu','Sapporo Sect','Yokohama School'], ans:0, l:'Le lycée Jujutsu de Kyoto, plus traditionaliste, est l\'école rivale dans le tournoi annuel d\'échange.', le:'Kyoto Jujutsu High, more traditional, is the rival school during the annual Sister-School Goodwill Event.' },
+      { q:'Capacité innée de Megumi Fushiguro ?', qe:'Megumi Fushiguro\'s innate technique?', c:['Six Yeux','Dix Ombres','Boogie Woogie','Flamme Noire'], ans:1, l:'La Technique des Dix Ombres invoque dix shikigami divins ; vaincu, un shikigami est perdu pour toujours.', le:'The Ten Shadows Technique summons ten divine shikigami; once defeated, a shikigami is gone forever.' },
+    ],
+    3: [
+      { q:'Vrai nom de Geto contrôlé par Kenjaku ?', qe:'Real identity of post-canon Geto?', c:['Suguru Geto réincarné','Kenjaku dans le corps de Geto','Le frère de Geto','Yuki Tsukumo'], ans:1, l:'Kenjaku, sorcier millénaire qui transfère son cerveau, occupe le corps de Suguru Geto pour comploter à grande échelle.', le:'Kenjaku, a millennium-old sorcerer who transplants his brain, occupies Suguru Geto\'s body to scheme on a grand scale.' },
+      { q:'Star Plasma Vessel destiné à Tengen ?', qe:'Tengen\'s designated Star Plasma Vessel?', c:['Yuki Tsukumo','Riko Amanai','Maki Zenin','Kasumi Miwa'], ans:1, l:'Riko Amanai devait fusionner avec Tengen pour stabiliser son évolution cosmique — mais elle est tuée avant.', le:'Riko Amanai was meant to merge with Tengen to stabilize his cosmic evolution — but she\'s killed beforehand.' },
+      { q:'Hatsu de Toji Fushiguro ?', qe:'Toji Fushiguro\'s ability?', c:['Restriction Céleste','Six Yeux','Black Flash permanent','Dix Ombres'], ans:0, l:'La Restriction Céleste prive Toji de toute énergie maudite mais décuple sa physique au-delà du surhumain.', le:'Heavenly Restriction strips Toji of cursed energy but enhances his physical body beyond superhuman.' },
+      { q:'Combien d\'élèves comptait l\'école de Tokyo en 1ère année ?', qe:'How many 1st-year students at Tokyo Jujutsu High?', c:['2','3','4','5'], ans:1, l:'Yuji, Megumi et Nobara forment la promotion de 1ère année, épaulée par Gojo comme professeur principal.', le:'Yuji, Megumi, and Nobara make up the 1st-year class, mentored by Gojo as homeroom teacher.' },
+      { q:'Restriction principale du Domain Expansion ?', qe:'Domain Expansion\'s main restriction?', c:['Aucune','Doit être déclenchée à voix haute','La cible doit voir le sortilège','Doit "garantir" un sort réussi en l\'enfermant'], ans:3, l:'Une expansion crée un espace où le sort de l\'utilisateur est garanti — mais les domaines opposés s\'annulent.', le:'A Domain creates a space where the user\'s technique is guaranteed — but opposing Domains cancel each other.' },
+    ],
+  },
+};
 
 // ── ANIME STATUS (airing/complete/upcoming) ──
 function getStatusInfo(raw) {
@@ -709,6 +1171,7 @@ function loginUser(u) {
   $('auth-screen').classList.add('hidden');
   $('app').classList.remove('hidden');
   renderUserAvatar();
+  recordLoginDay();
   applyTheme(getUserData(u).theme || 'dark');
   currentLang = getUserData(u).lang || 'fr';
   applyLang();
@@ -749,7 +1212,7 @@ function exportAllData() {
       translations: JSON.parse(localStorage.getItem('anitrack_translations') || '{}'),
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     const date = new Date().toISOString().slice(0, 10);
@@ -791,7 +1254,7 @@ function triggerImport() {
       if (parsed.translations && typeof parsed.translations === 'object') {
         const cur = JSON.parse(localStorage.getItem('anitrack_translations') || '{}');
         Object.assign(cur, parsed.translations);
-        try { localStorage.setItem('anitrack_translations', JSON.stringify(cur)); } catch {}
+        try { localStorage.setItem('anitrack_translations', JSON.stringify(cur)); } catch { }
       }
       showToast(`✓ ${t('import_success')} (${userCount})`);
       setTimeout(() => location.reload(), 1500);
@@ -967,6 +1430,7 @@ function switchView(v) {
     document.querySelector('.status-tab[data-status="favorites"]')?.classList.add('active');
     renderListView();
   }
+  if (v === 'quizz') renderQuizView();
   if (v === 'top10') renderTop10();
   if (v === 'achievements') renderAchievements();
   if (v === 'donation') { /* static view, nothing to render */ }
@@ -1113,6 +1577,15 @@ function initGenreFilters() {
     currentGenre = b.dataset.genre;
     currentSearchPage = 1;
     searchAnime();
+    // "Dark Sasuke" — clicked the Seinen demographic filter
+    if (b.dataset.genre === '42' && currentUser) {
+      const data = getUserData(currentUser);
+      if (!data.seenSeinenFilter) {
+        data.seenSeinenFilter = true;
+        saveUserData(currentUser, data);
+        showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(x => x.key === 'darksasuke'))} !`);
+      }
+    }
   }));
 }
 
@@ -1572,6 +2045,22 @@ function playTrailerEmbed(tid, btn) {
 function discoverAction(action) {
   const a = discoverPool[discoverIndex];
   if (!a) return;
+  // Track swipe timing for "Compulsive Scroller" achievement (10 swipes < 5s)
+  if (currentUser) {
+    const userData = getUserData(currentUser);
+    const now = Date.now();
+    if (!userData.swipeTimes) userData.swipeTimes = [];
+    userData.swipeTimes.push(now);
+    if (userData.swipeTimes.length > 12) userData.swipeTimes = userData.swipeTimes.slice(-12);
+    if (userData.swipeTimes.length >= 10 && !userData.compulsiveScroller) {
+      const last10 = userData.swipeTimes.slice(-10);
+      if (last10[9] - last10[0] < 5000) {
+        userData.compulsiveScroller = true;
+        showToast(`🏆 ${achLabel(ACHIEVEMENTS.find(x => x.key === 'compulsive'))} !`);
+      }
+    }
+    saveUserData(currentUser, userData);
+  }
   if (action === 'skip') {
     addSkipped(a.mal_id);
   } else {
@@ -2505,6 +2994,275 @@ function clearProfilePic() {
   closeAvatarPicker();
 }
 
+// ══ QUIZ ═════════════════════════════════════════
+let _quizState = null;
+let _quizDifficulty = 1; // 1 = Facile, 2 = Moyen, 3 = Difficile
+
+function getQuizQuestions(malId, level) {
+  if (level === 1) return QUIZ_BANK[malId]?.questions || [];
+  return QUIZ_BANK_EXTRA[malId]?.[level] || [];
+}
+
+function setQuizDifficulty(level) {
+  _quizDifficulty = Number(level) || 1;
+  renderQuizView();
+}
+// _quizState shape:
+// { malId, title, image, questions:[Q,...], idx:0, score:0, answers:[{picked, correct}], lockUntilNext:false }
+
+function _shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getAvailableQuizzes() {
+  const list = getList();
+  const out = [];
+  for (const malId in QUIZ_BANK) {
+    const fav = list[malId]?.favorite;
+    if (!fav) continue;
+    const meta = QUIZ_BANK[malId];
+    out.push({
+      malId: Number(malId),
+      title: meta.title,
+      image: meta.image,
+      counts: {
+        1: getQuizQuestions(malId, 1).length,
+        2: getQuizQuestions(malId, 2).length,
+        3: getQuizQuestions(malId, 3).length,
+      },
+    });
+  }
+  return out;
+}
+
+function renderQuizView() {
+  const el = $('view-quizz');
+  if (!el) return;
+
+  if (_quizState && _quizState.idx < _quizState.questions.length) {
+    return renderQuizQuestion();
+  }
+  if (_quizState && _quizState.idx >= _quizState.questions.length) {
+    return renderQuizResults();
+  }
+
+  const quizzes = getAvailableQuizzes();
+  const lvl = _quizDifficulty;
+  el.innerHTML = `
+    <div class="view-header">
+      <h1 class="view-title">${t('quiz_title')}</h1>
+      <p class="view-subtitle">${t('quiz_sub')}</p>
+    </div>
+    <div class="quiz-difficulty-bar">
+      <span class="qd-label">${t('quiz_difficulty')}</span>
+      <button type="button" class="qd-btn qd-1 ${lvl===1?'active':''}" onclick="setQuizDifficulty(1)">${t('quiz_diff_1')}</button>
+      <button type="button" class="qd-btn qd-2 ${lvl===2?'active':''}" onclick="setQuizDifficulty(2)">${t('quiz_diff_2')}</button>
+      <button type="button" class="qd-btn qd-3 ${lvl===3?'active':''}" onclick="setQuizDifficulty(3)">${t('quiz_diff_3')}</button>
+    </div>
+    ${quizzes.length === 0 ? `
+      <div class="quiz-empty"><div class="empty-icon">🎓</div><p>${t('quiz_no_fav')}</p></div>
+    ` : `
+      <div class="quiz-section-title">${t('quiz_select')}</div>
+      <div class="quiz-grid quiz-grid-lvl-${lvl}">
+        ${quizzes.map(q => {
+          const count = q.counts[lvl] || 0;
+          const disabled = count === 0;
+          return `<button class="quiz-card halo-${lvl} ${disabled?'quiz-card-disabled':''}" type="button" ${disabled?'disabled':`onclick="startQuiz(${q.malId})"`}>
+            <img class="quiz-card-img" src="${esc(q.image)}" alt="${esc(q.title)}" loading="lazy"/>
+            <div class="quiz-card-body">
+              <div class="quiz-card-title">${esc(q.title)}</div>
+              <div class="quiz-card-meta">${count} ${t('quiz_q_count')}</div>
+              ${disabled ? `<span class="quiz-card-go quiz-card-na">${t('quiz_no_questions')}</span>` : `<span class="quiz-card-go">▶ ${t('quiz_start')}</span>`}
+            </div>
+          </button>`;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function startQuiz(malId) {
+  const meta = QUIZ_BANK[malId];
+  if (!meta) return;
+  const level = _quizDifficulty;
+  const sourcePool = getQuizQuestions(malId, level);
+  if (!sourcePool.length) return;
+  const pool = _shuffle(sourcePool).slice(0, Math.min(10, sourcePool.length));
+  // Shuffle choices per question while preserving the correct answer
+  const questions = pool.map(q => {
+    const indices = [0, 1, 2, 3];
+    const shuffledIdx = _shuffle(indices);
+    const newChoices = shuffledIdx.map(i => q.c[i]);
+    const newAns = shuffledIdx.indexOf(q.ans);
+    return { ...q, c: newChoices, ans: newAns };
+  });
+  _quizState = {
+    malId,
+    level,
+    title: meta.title,
+    image: meta.image,
+    questions,
+    idx: 0,
+    score: 0,
+    answers: [],
+    lockUntilNext: false,
+  };
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const el = $('view-quizz');
+  if (!el || !_quizState) return;
+  const s = _quizState;
+  const q = s.questions[s.idx];
+  const total = s.questions.length;
+  const pct = Math.round(((s.idx) / total) * 100);
+  const questionText = currentLang === 'en' ? q.qe : q.q;
+  const last = s.lockUntilNext ? s.answers[s.answers.length - 1] : null;
+  const showFeedback = !!last;
+
+  const choicesHtml = q.c.map((choice, i) => {
+    let cls = 'quiz-choice';
+    let icon = '';
+    if (showFeedback) {
+      if (i === q.ans) { cls += ' quiz-choice-correct'; icon = '✓'; }
+      else if (i === last.picked) { cls += ' quiz-choice-wrong'; icon = '✗'; }
+      else { cls += ' quiz-choice-disabled'; }
+    }
+    return `<button class="${cls}" type="button" ${showFeedback ? 'disabled' : `onclick="pickQuizAnswer(${i})"`}>
+      <span class="quiz-choice-letter">${String.fromCharCode(65 + i)}</span>
+      <span class="quiz-choice-text">${esc(choice)}</span>
+      ${icon ? `<span class="quiz-choice-icon">${icon}</span>` : ''}
+    </button>`;
+  }).join('');
+
+  const lore = currentLang === 'en' ? q.le : q.l;
+  const isLast = s.idx === total - 1;
+
+  const diffLabel = t('quiz_diff_' + (s.level || 1));
+  el.innerHTML = `
+    <div class="view-header">
+      <h1 class="view-title">${t('quiz_title')} — ${esc(s.title)}</h1>
+      <p class="view-subtitle"><span class="qd-pill qd-pill-${s.level||1}">${diffLabel}</span></p>
+    </div>
+    <div class="quiz-runner">
+      <div class="quiz-runner-head">
+        <span class="quiz-q-num">${t('quiz_question')} <strong>${s.idx + 1}/${total}</strong></span>
+        <span class="quiz-runner-score">${t('quiz_score')} : <strong>${s.score}</strong></span>
+      </div>
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+      <div class="quiz-question-text">${esc(questionText)}</div>
+      <div class="quiz-choices">${choicesHtml}</div>
+      ${showFeedback ? `
+        <div class="quiz-feedback ${last.correct ? 'fb-ok' : 'fb-ko'}">
+          <div class="quiz-feedback-head">${last.correct ? '✓ ' + t('quiz_correct') : '✗ ' + t('quiz_wrong')}</div>
+          <div class="quiz-feedback-lore"><strong>${t('quiz_lore')}</strong> ${esc(lore)}</div>
+        </div>
+        <button class="quiz-next-btn" type="button" onclick="nextQuizQuestion()">
+          ${isLast ? t('quiz_finish') : t('quiz_next')} →
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+function pickQuizAnswer(idx) {
+  if (!_quizState || _quizState.lockUntilNext) return;
+  const s = _quizState;
+  const q = s.questions[s.idx];
+  const correct = idx === q.ans;
+  s.answers.push({ qIdx: s.idx, picked: idx, correct });
+  if (correct) s.score++;
+  s.lockUntilNext = true;
+  renderQuizQuestion();
+}
+
+function nextQuizQuestion() {
+  if (!_quizState) return;
+  _quizState.idx++;
+  _quizState.lockUntilNext = false;
+  if (_quizState.idx >= _quizState.questions.length) {
+    finishQuiz();
+  } else {
+    renderQuizQuestion();
+  }
+}
+
+function finishQuiz() {
+  if (!_quizState || !currentUser) return;
+  const s = _quizState;
+  const total = s.questions.length;
+  // Persist quiz stats and trigger achievements
+  const data = getUserData(currentUser);
+  if (!data.quizFirst) data.quizFirst = true;
+  if (s.score === total) {
+    data.perfectQuizCount = (data.perfectQuizCount || 0) + 1;
+  }
+  if (s.score === 0) {
+    data.quizZero = true;
+  }
+  saveUserData(currentUser, data);
+  renderQuizResults();
+}
+
+function renderQuizResults() {
+  const el = $('view-quizz');
+  if (!el || !_quizState) return;
+  const s = _quizState;
+  const total = s.questions.length;
+  const wrong = s.answers.filter(a => !a.correct);
+  const isPerfect = s.score === total;
+  const isZero = s.score === 0;
+  const headlineMsg = isPerfect ? t('quiz_perfect_msg') : (isZero ? t('quiz_zero_msg') : '');
+
+  el.innerHTML = `
+    <div class="view-header">
+      <h1 class="view-title">${t('quiz_complete')}</h1>
+    </div>
+    <div class="quiz-result-card ${isPerfect ? 'qr-perfect' : ''} ${isZero ? 'qr-zero' : ''}">
+      <div class="qr-emoji">${isPerfect ? '🎉' : (isZero ? '💀' : (s.score >= total / 2 ? '🎯' : '😅'))}</div>
+      <div class="qr-score">${s.score}<span class="qr-total">/${total}</span></div>
+      <div class="qr-label">${t('quiz_your_score')}</div>
+      ${headlineMsg ? `<div class="qr-headline">${headlineMsg}</div>` : ''}
+      <div class="qr-actions">
+        <button class="qr-btn qr-btn-retry" type="button" onclick="retryCurrentQuiz()">↻ ${t('quiz_retry')}</button>
+        <button class="qr-btn qr-btn-back"  type="button" onclick="exitQuiz()">← ${t('quiz_back')}</button>
+      </div>
+    </div>
+    ${wrong.length ? `
+      <div class="quiz-section-title">${t('quiz_review')}</div>
+      <div class="quiz-wrong-list">
+        ${wrong.map(w => {
+          const q = s.questions[w.qIdx];
+          const qText = currentLang === 'en' ? q.qe : q.q;
+          const lore = currentLang === 'en' ? q.le : q.l;
+          return `<div class="quiz-wrong-item">
+            <div class="qw-q">${esc(qText)}</div>
+            <div class="qw-row qw-picked"><span class="qw-tag tag-bad">${t('quiz_you_picked')}</span><span>${esc(q.c[w.picked])}</span></div>
+            <div class="qw-row qw-correct"><span class="qw-tag tag-ok">${t('quiz_correct_was')}</span><span>${esc(q.c[q.ans])}</span></div>
+            <div class="qw-lore"><strong>${t('quiz_lore')}</strong> ${esc(lore)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    ` : ''}
+  `;
+}
+
+function retryCurrentQuiz() {
+  if (!_quizState) return;
+  startQuiz(_quizState.malId);
+}
+
+function exitQuiz() {
+  _quizState = null;
+  renderQuizView();
+}
+
 function renderAchievements() {
   const arr = Object.values(getList());
   const completed = arr.filter(a => a.status === 'completed').length;
@@ -2522,18 +3280,31 @@ function renderAchievements() {
     const r = checkAchievement(ach);
     const desc = currentLang === 'en' ? ach.descEn : ach.descFr;
     const pct = r.target ? Math.round((r.progress / r.target) * 100) : 0;
-    return `<div class="ach-card ${r.unlocked ? 'ach-unlocked' : 'ach-locked'}" style="--ach-color:${ach.color}">
+    // Hidden achievements stay obscured until unlocked
+    if (ach.hidden && !r.unlocked) {
+      return `<div class="ach-card ach-locked ach-hidden-card" style="--ach-color:${ach.color}">
+        <div class="ach-icon">❓</div>
+        <div class="ach-body">
+          <div class="ach-title-row">
+            <span class="ach-title">${t('hidden_ach')}</span>
+            <span class="ach-state">${t('locked')}</span>
+          </div>
+          <div class="ach-desc ach-mystery">${t('hidden_ach_hint')}</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="ach-card ${r.unlocked ? 'ach-unlocked' : 'ach-locked'} ${ach.hidden ? 'ach-hidden-revealed' : ''}" style="--ach-color:${ach.color}">
       <div class="ach-icon">${ach.emoji}</div>
       <div class="ach-body">
         <div class="ach-title-row">
-          <span class="ach-title">${ach.label}</span>
+          <span class="ach-title">${esc(achLabel(ach))}</span>
           <span class="ach-state">${r.unlocked ? '✓ ' + t('unlocked') : t('locked')}</span>
         </div>
         <div class="ach-desc">${esc(desc)}</div>
-        <div class="ach-progress">
+        ${r.target > 1 ? `<div class="ach-progress">
           <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
           <span class="ach-progress-val">${r.progress}/${r.target}</span>
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -2598,16 +3369,16 @@ function renderProfile() {
       <div class="profile-section-title">🏆 ${t('podium_title')}</div>
       <div class="podium-row">
         ${podiumOrder.map(rank => {
-          if (rank >= topSeriesIds.length) return '<div class="podium-slot podium-empty"></div>';
-          const a = list[topSeriesIds[rank]];
-          const rankClass = rank === 0 ? 'podium-1' : rank === 1 ? 'podium-2' : 'podium-3';
-          const rankNum = rank + 1;
-          return `<div class="podium-slot ${rankClass}" onclick="openModal(${a.mal_id},'profile')">
+    if (rank >= topSeriesIds.length) return '<div class="podium-slot podium-empty"></div>';
+    const a = list[topSeriesIds[rank]];
+    const rankClass = rank === 0 ? 'podium-1' : rank === 1 ? 'podium-2' : 'podium-3';
+    const rankNum = rank + 1;
+    return `<div class="podium-slot ${rankClass}" onclick="openModal(${a.mal_id},'profile')">
             <div class="podium-rank-num">${rankNum}</div>
             <img class="podium-img" src="${esc(a.image)}" alt="${esc(a.title)}" loading="lazy"/>
             <div class="podium-name">${esc(a.title)}</div>
           </div>`;
-        }).join('')}
+  }).join('')}
       </div>
     </div>` : `
     <div class="profile-section">
@@ -2948,6 +3719,39 @@ function showToast(msg) {
   clearTimeout(_toastT); _toastT = setTimeout(() => el.classList.add('hidden'), 2800);
 }
 
+// ══ iOS PWA INSTALL PROMPT ═══════════════════════
+function _isIosSafari() {
+  const ua = navigator.userAgent || '';
+  // iPhone, iPad (incl. iPad in desktop mode on iOS 13+ which reports MacIntel + touch)
+  const isIos = /iPhone|iPod/.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isIos) return false;
+  // Exclude in-app browsers (FB, Insta, etc.) — they often hide Add-to-Home-Screen
+  if (/FBAN|FBAV|Instagram|Line\/|Snapchat/.test(ua)) return false;
+  return true;
+}
+
+function _isStandalone() {
+  return window.navigator.standalone === true
+    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+
+function maybeShowIosInstallPrompt() {
+  if (!_isIosSafari() || _isStandalone()) return;
+  // Respect user dismissal for 14 days
+  const dismissed = Number(localStorage.getItem('anitrack_install_dismissed') || 0);
+  if (dismissed && (Date.now() - dismissed) < 14 * 24 * 60 * 60 * 1000) return;
+  const el = document.getElementById('ios-install-prompt');
+  if (!el) return;
+  setTimeout(() => el.classList.remove('hidden'), 1200);
+}
+
+function dismissIosInstall() {
+  const el = document.getElementById('ios-install-prompt');
+  if (el) el.classList.add('hidden');
+  try { localStorage.setItem('anitrack_install_dismissed', String(Date.now())); } catch {}
+}
+
 // ══ STARFIELD BACKGROUND ═══════════════════════════
 // Vanilla port of https://21st.dev Starfield component (canvas + RAF, no React)
 const Starfield = {
@@ -3066,6 +3870,7 @@ const Starfield = {
 
   applyLang();
   Starfield.init();
+  maybeShowIosInstallPrompt();
 
   const db = getDB(), saved = db.sessions?.current;
   if (saved && db.users?.[saved]) loginUser(saved);
